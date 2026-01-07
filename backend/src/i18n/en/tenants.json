@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Tenant not found"
+    },
+    "success": {
+        "created": "Tenant created successfully",
+        "updated": "Tenant updated successfully",
+        "deleted": "Tenant deleted successfully"
+    }
+}

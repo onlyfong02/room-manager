@@ -1,0 +1,14 @@
+{
+    "validation": {
+        "required": "{{field}} là bắt buộc",
+        "invalid": "{{field}} không hợp lệ",
+        "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+        "maxLength": "{{field}} không được vượt quá {{max}} ký tự"
+    },
+    "errors": {
+        "internalServerError": "Lỗi máy chủ nội bộ",
+        "unauthorized": "Truy cập không được phép",
+        "forbidden": "Truy cập bị cấm",
+        "badRequest": "Yêu cầu không hợp lệ"
+    }
+}

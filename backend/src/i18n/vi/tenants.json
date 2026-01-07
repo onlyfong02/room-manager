@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy người thuê"
+    },
+    "success": {
+        "created": "Tạo người thuê thành công",
+        "updated": "Cập nhật người thuê thành công",
+        "deleted": "Xóa người thuê thành công"
+    }
+}

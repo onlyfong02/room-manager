@@ -1,0 +1,88 @@
+{
+    "common": {
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "delete": "Xóa",
+        "edit": "Sửa",
+        "add": "Thêm",
+        "search": "Tìm kiếm",
+        "loading": "Đang tải...",
+        "error": "Lỗi",
+        "success": "Thành công",
+        "confirm": "Xác nhận",
+        "yes": "Có",
+        "no": "Không",
+        "close": "Đóng",
+        "back": "Quay lại",
+        "next": "Tiếp theo",
+        "submit": "Gửi",
+        "reset": "Đặt lại"
+    },
+    "auth": {
+        "login": "Đăng nhập",
+        "register": "Đăng ký",
+        "logout": "Đăng xuất",
+        "email": "Email",
+        "password": "Mật khẩu",
+        "fullName": "Họ và tên",
+        "phone": "Số điện thoại",
+        "loginTitle": "Room Manager",
+        "loginSubtitle": "Đăng nhập vào hệ thống",
+        "registerTitle": "Đăng ký tài khoản",
+        "registerSubtitle": "Tạo tài khoản mới",
+        "loggingIn": "Đang đăng nhập...",
+        "registering": "Đang đăng ký...",
+        "alreadyHaveAccount": "Đã có tài khoản?",
+        "dontHaveAccount": "Chưa có tài khoản?",
+        "loginNow": "Đăng nhập",
+        "registerNow": "Đăng ký ngay"
+    },
+    "nav": {
+        "dashboard": "Tổng quan",
+        "buildings": "Khu trọ",
+        "rooms": "Phòng",
+        "tenants": "Người thuê",
+        "contracts": "Hợp đồng",
+        "invoices": "Hóa đơn",
+        "payments": "Thanh toán"
+    },
+    "dashboard": {
+        "title": "Tổng quan",
+        "welcome": "Chào mừng đến với Room Manager",
+        "description": "Hệ thống quản lý phòng trọ giúp bạn dễ dàng quản lý khu trọ, phòng, người thuê, hợp đồng và thanh toán.",
+        "stats": {
+            "buildings": "Khu trọ",
+            "rooms": "Phòng",
+            "tenants": "Người thuê",
+            "unpaidInvoices": "Hóa đơn chưa thanh toán"
+        }
+    },
+    "buildings": {
+        "title": "Quản lý khu trọ",
+        "list": "Danh sách khu trọ sẽ hiển thị ở đây"
+    },
+    "rooms": {
+        "title": "Quản lý phòng",
+        "list": "Danh sách phòng sẽ hiển thị ở đây"
+    },
+    "tenants": {
+        "title": "Quản lý người thuê",
+        "list": "Danh sách người thuê sẽ hiển thị ở đây"
+    },
+    "contracts": {
+        "title": "Quản lý hợp đồng",
+        "list": "Danh sách hợp đồng sẽ hiển thị ở đây"
+    },
+    "invoices": {
+        "title": "Quản lý hóa đơn",
+        "list": "Danh sách hóa đơn sẽ hiển thị ở đây"
+    },
+    "payments": {
+        "title": "Quản lý thanh toán",
+        "list": "Danh sách thanh toán sẽ hiển thị ở đây"
+    },
+    "header": {
+        "greeting": "Xin chào, {{name}}",
+        "title": "Quản lý phòng trọ"
+    }
+}

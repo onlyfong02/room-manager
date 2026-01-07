@@ -1,0 +1,12 @@
+{
+    "errors": {
+        "notFound": "User not found",
+        "emailExists": "Email already exists"
+    },
+    "success": {
+        "created": "User created successfully",
+        "updated": "User updated successfully",
+        "deleted": "User deleted successfully",
+        "passwordChanged": "Password changed successfully"
+    }
+}

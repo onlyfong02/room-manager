@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy khu trọ"
+    },
+    "success": {
+        "created": "Tạo khu trọ thành công",
+        "updated": "Cập nhật khu trọ thành công",
+        "deleted": "Xóa khu trọ thành công"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy thanh toán"
+    },
+    "success": {
+        "created": "Ghi nhận thanh toán thành công",
+        "updated": "Cập nhật thanh toán thành công",
+        "deleted": "Xóa thanh toán thành công"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy hóa đơn"
+    },
+    "success": {
+        "created": "Tạo hóa đơn thành công",
+        "updated": "Cập nhật hóa đơn thành công",
+        "deleted": "Xóa hóa đơn thành công"
+    }
+}

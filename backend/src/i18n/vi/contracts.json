@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy hợp đồng"
+    },
+    "success": {
+        "created": "Tạo hợp đồng thành công",
+        "updated": "Cập nhật hợp đồng thành công",
+        "deleted": "Xóa hợp đồng thành công"
+    }
+}

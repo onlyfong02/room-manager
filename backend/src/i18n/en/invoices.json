@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Invoice not found"
+    },
+    "success": {
+        "created": "Invoice created successfully",
+        "updated": "Invoice updated successfully",
+        "deleted": "Invoice deleted successfully"
+    }
+}

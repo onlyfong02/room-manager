@@ -1,0 +1,11 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy phòng"
+    },
+    "success": {
+        "created": "Tạo phòng thành công",
+        "updated": "Cập nhật phòng thành công",
+        "deleted": "Xóa phòng thành công",
+        "indexesUpdated": "Cập nhật chỉ số điện nước thành công"
+    }
+}

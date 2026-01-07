@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Payment not found"
+    },
+    "success": {
+        "created": "Payment recorded successfully",
+        "updated": "Payment updated successfully",
+        "deleted": "Payment deleted successfully"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "errors": {
+        "notFound": "Không tìm thấy người dùng",
+        "emailExists": "Email đã tồn tại"
+    },
+    "success": {
+        "created": "Tạo người dùng thành công",
+        "updated": "Cập nhật người dùng thành công",
+        "deleted": "Xóa người dùng thành công",
+        "passwordChanged": "Đổi mật khẩu thành công"
+    }
+}

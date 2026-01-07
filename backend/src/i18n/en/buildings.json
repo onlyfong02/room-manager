@@ -1,0 +1,10 @@
+{
+    "errors": {
+        "notFound": "Building not found"
+    },
+    "success": {
+        "created": "Building created successfully",
+        "updated": "Building updated successfully",
+        "deleted": "Building deleted successfully"
+    }
+}

@@ -1,0 +1,88 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "search": "Search",
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "confirm": "Confirm",
+        "yes": "Yes",
+        "no": "No",
+        "close": "Close",
+        "back": "Back",
+        "next": "Next",
+        "submit": "Submit",
+        "reset": "Reset"
+    },
+    "auth": {
+        "login": "Login",
+        "register": "Register",
+        "logout": "Logout",
+        "email": "Email",
+        "password": "Password",
+        "fullName": "Full Name",
+        "phone": "Phone Number",
+        "loginTitle": "Room Manager",
+        "loginSubtitle": "Login to your account",
+        "registerTitle": "Create Account",
+        "registerSubtitle": "Create a new account",
+        "loggingIn": "Logging in...",
+        "registering": "Registering...",
+        "alreadyHaveAccount": "Already have an account?",
+        "dontHaveAccount": "Don't have an account?",
+        "loginNow": "Login",
+        "registerNow": "Register now"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "buildings": "Buildings",
+        "rooms": "Rooms",
+        "tenants": "Tenants",
+        "contracts": "Contracts",
+        "invoices": "Invoices",
+        "payments": "Payments"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome to Room Manager",
+        "description": "Room management system helps you easily manage buildings, rooms, tenants, contracts and payments.",
+        "stats": {
+            "buildings": "Buildings",
+            "rooms": "Rooms",
+            "tenants": "Tenants",
+            "unpaidInvoices": "Unpaid Invoices"
+        }
+    },
+    "buildings": {
+        "title": "Building Management",
+        "list": "Building list will be displayed here"
+    },
+    "rooms": {
+        "title": "Room Management",
+        "list": "Room list will be displayed here"
+    },
+    "tenants": {
+        "title": "Tenant Management",
+        "list": "Tenant list will be displayed here"
+    },
+    "contracts": {
+        "title": "Contract Management",
+        "list": "Contract list will be displayed here"
+    },
+    "invoices": {
+        "title": "Invoice Management",
+        "list": "Invoice list will be displayed here"
+    },
+    "payments": {
+        "title": "Payment Management",
+        "list": "Payment list will be displayed here"
+    },
+    "header": {
+        "greeting": "Hello, {{name}}",
+        "title": "Room Management"
+    }
+}
