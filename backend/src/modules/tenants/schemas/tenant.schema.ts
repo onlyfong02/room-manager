@@ -12,6 +12,9 @@ export class Tenant {
     @Prop({ required: true, trim: true })
     fullName: string;
 
+    @Prop({ required: true, unique: true, index: true })
+    code: string;
+
     @Prop({ required: true, trim: true, index: true })
     idCard: string;
 
@@ -26,6 +29,9 @@ export class Tenant {
 
     @Prop()
     dateOfBirth: Date;
+
+    @Prop({ type: String, enum: ['MALE', 'FEMALE', 'OTHER'] })
+    gender: string;
 
     @Prop({ trim: true })
     permanentAddress: string;

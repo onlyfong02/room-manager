@@ -18,6 +18,10 @@ export class I18nValidationExceptionFilter implements ExceptionFilter {
         const status = exception.getStatus();
         const exceptionResponse = exception.getResponse() as any;
 
+        // Log validation errors to console
+        console.log('=== VALIDATION ERROR ===');
+        console.log('Exception Response:', JSON.stringify(exceptionResponse, null, 2));
+
         // If it's a validation error with message array
         if (Array.isArray(exceptionResponse.message)) {
             const i18nContext = I18nContext.current(host);

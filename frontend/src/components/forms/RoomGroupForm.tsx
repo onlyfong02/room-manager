@@ -104,6 +104,12 @@ export default function RoomGroupForm({
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
+                {defaultValues?.code && (
+                    <div className="space-y-2">
+                        <Label>{t('roomGroups.code')}</Label>
+                        <Input value={defaultValues.code} disabled className="bg-muted" />
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label htmlFor="buildingId">{t('rooms.building')} <span className="text-destructive">*</span></Label>
                     {hasBuildingPreselected ? (

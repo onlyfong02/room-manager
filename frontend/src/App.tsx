@@ -11,6 +11,7 @@ import ContractsPage from '@/pages/contracts/ContractsPage';
 import InvoicesPage from '@/pages/invoices/InvoicesPage';
 import PaymentsPage from '@/pages/payments/PaymentsPage';
 import RoomGroupsPage from '@/pages/room-groups/RoomGroupsPage';
+import ServicesPage from '@/pages/services/ServicesPage';
 import DashboardLayout from '@/layouts/DashboardLayout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ function App() {
                     <Route path="invoices" element={<InvoicesPage />} />
                     <Route path="payments" element={<PaymentsPage />} />
                     <Route path="room-groups" element={<RoomGroupsPage />} />
+                    <Route path="services" element={<ServicesPage />} />
                 </Route>
             </Routes>
         </Router>

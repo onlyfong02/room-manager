@@ -14,11 +14,12 @@ interface PriceTier {
 
 interface PriceTablePopoverProps {
     shortTermPrices: PriceTier[];
-    pricingType: 'HOURLY' | 'DAILY';
+    pricingType?: 'HOURLY' | 'DAILY';
+    unitLabel?: string;
     maxVisibleRows?: number;
 }
 
-export function PriceTablePopover({ shortTermPrices, pricingType, maxVisibleRows = 3 }: PriceTablePopoverProps) {
+export function PriceTablePopover({ shortTermPrices, pricingType, unitLabel, maxVisibleRows = 3 }: PriceTablePopoverProps) {
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -26,7 +27,7 @@ export function PriceTablePopover({ shortTermPrices, pricingType, maxVisibleRows
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    const unit = pricingType === 'HOURLY' ? 'h' : t('rooms.days', 'ngày');
+    const unit = unitLabel || (pricingType === 'HOURLY' ? 'h' : t('rooms.days', 'ngày'));
     const hasMore = shortTermPrices.length > maxVisibleRows;
     const visiblePrices = shortTermPrices.slice(0, maxVisibleRows);
 
@@ -66,7 +67,10 @@ export function PriceTablePopover({ shortTermPrices, pricingType, maxVisibleRows
                     <PopoverContent className="w-auto p-0" align="end">
                         <div className="p-3 space-y-2">
                             <h4 className="font-medium text-sm">
-                                {pricingType === 'HOURLY' ? t('rooms.pricingHourly') : t('rooms.pricingDaily')}
+                                {pricingType
+                                    ? (pricingType === 'HOURLY' ? t('rooms.pricingHourly') : t('rooms.pricingDaily'))
+                                    : t('services.priceTable', 'Bảng giá')
+                                }
                             </h4>
                             <div className="space-y-1">
                                 {shortTermPrices.map((tier, index) => (

@@ -237,8 +237,8 @@ export default function RoomGroupsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t('roomGroups.color')}</TableHead>
                                     <TableHead>{t('roomGroups.name')}</TableHead>
+                                    <TableHead>{t('roomGroups.code')}</TableHead>
                                     <TableHead>{t('roomGroups.description')}</TableHead>
                                     <TableHead className="text-center">{t('roomGroups.sortOrder')}</TableHead>
                                     <TableHead className="text-center">{t('common.status')}</TableHead>
@@ -249,9 +249,12 @@ export default function RoomGroupsPage() {
                                 {paginatedGroups.map((group) => (
                                     <TableRow key={group._id}>
                                         <TableCell>
-                                            <div className={`w-6 h-6 rounded-full ${getColorBadge(group.color || 'gray')}`} />
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-6 h-6 rounded-full shrink-0 ${getColorBadge(group.color || 'gray')}`} />
+                                                <span className="font-medium">{group.name}</span>
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="font-medium">{group.name}</TableCell>
+                                        <TableCell className="font-mono text-sm">{(group as any).code}</TableCell>
                                         <TableCell className="text-muted-foreground max-w-[200px] truncate">
                                             {group.description || '-'}
                                         </TableCell>

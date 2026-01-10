@@ -1,16 +1,19 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail, IsDate, IsEnum, IsMongoId, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsEmail, IsDateString, IsEnum, IsMongoId, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TenantStatus } from '@common/constants/enums';
 
 class EmergencyContactDto {
     @IsString()
-    name: string;
+    @IsOptional()
+    name?: string;
 
     @IsString()
-    phone: string;
+    @IsOptional()
+    phone?: string;
 
     @IsString()
-    relationship: string;
+    @IsOptional()
+    relationship?: string;
 }
 
 export class CreateTenantDto {
@@ -30,10 +33,13 @@ export class CreateTenantDto {
     @IsOptional()
     email?: string;
 
-    @IsDate()
-    @Type(() => Date)
+    @IsDateString()
     @IsOptional()
-    dateOfBirth?: Date;
+    dateOfBirth?: string;
+
+    @IsString()
+    @IsOptional()
+    gender?: string;
 
     @IsString()
     @IsOptional()
@@ -70,19 +76,25 @@ export class UpdateTenantDto {
     @IsOptional()
     email?: string;
 
+    @IsDateString()
+    @IsOptional()
+    dateOfBirth?: string;
+
+    @IsString()
+    @IsOptional()
+    gender?: string;
+
     @IsMongoId()
     @IsOptional()
     currentRoomId?: string;
 
-    @IsDate()
-    @Type(() => Date)
+    @IsDateString()
     @IsOptional()
-    moveInDate?: Date;
+    moveInDate?: string;
 
-    @IsDate()
-    @Type(() => Date)
+    @IsDateString()
     @IsOptional()
-    moveOutDate?: Date;
+    moveOutDate?: string;
 
     @IsEnum(TenantStatus)
     @IsOptional()
@@ -96,6 +108,10 @@ export class UpdateTenantDto {
     @IsString()
     @IsOptional()
     occupation?: string;
+
+    @IsString()
+    @IsOptional()
+    permanentAddress?: string;
 
     @IsString()
     @IsOptional()

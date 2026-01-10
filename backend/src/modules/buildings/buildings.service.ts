@@ -20,10 +20,9 @@ export class BuildingsService {
      * Format: B-{timestamp}-{random4digits}
      */
     private generateBuildingCode(): string {
-        // Use a simpler format: B-TIMESTAMP(base36)
-        // e.g. B-LRA5Z9
         const timestamp = Date.now().toString(36).toUpperCase();
-        return `B-${timestamp}`;
+        const random = Math.floor(1000 + Math.random() * 9000);
+        return `B-${timestamp}-${random}`;
     }
 
     async create(ownerId: string, createBuildingDto: CreateBuildingDto): Promise<Building> {

@@ -31,11 +31,13 @@ import TenantForm, { TenantFormData } from '@/components/forms/TenantForm';
 
 interface Tenant {
     _id: string;
+    code: string;
     fullName: string;
     email: string;
     phone: string;
     idNumber: string;
     dateOfBirth?: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER';
     address?: string;
     occupation?: string;
     // Map emergency contact
@@ -51,7 +53,7 @@ interface Tenant {
 const tenantsApi = {
     getAll: async (): Promise<Tenant[]> => {
         const response = await apiClient.get('/tenants');
-        // API may return { data: [...], meta: {...} } or direct array
+        // API may return {data: [...], meta: {...} } or direct array
         const rawData = Array.isArray(response.data?.data) ? response.data.data :
             Array.isArray(response.data) ? response.data : [];
 
@@ -69,6 +71,8 @@ const tenantsApi = {
             idCard: data.idNumber, // Backend uses idCard, not idNumber
             phone: data.phone,
             email: data.email || undefined,
+            dateOfBirth: data.dateOfBirth || undefined,
+            gender: data.gender || undefined,
             permanentAddress: data.address || undefined,
             occupation: data.occupation || undefined,
             emergencyContact: data.emergencyContact || undefined,
@@ -83,6 +87,8 @@ const tenantsApi = {
         if (data.phone) backendData.phone = data.phone;
         if (data.email) backendData.email = data.email;
         if (data.idNumber) backendData.idCard = data.idNumber;
+        if (data.dateOfBirth) backendData.dateOfBirth = data.dateOfBirth;
+        if (data.gender) backendData.gender = data.gender;
         if (data.occupation) backendData.occupation = data.occupation;
         if (data.emergencyContact) backendData.emergencyContact = data.emergencyContact;
         if (data.address) backendData.permanentAddress = data.address;
@@ -248,9 +254,11 @@ export default function TenantsPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>{t('tenants.fullName')}</TableHead>
+                                    <TableHead>{t('tenants.code')}</TableHead>
                                     <TableHead>{t('tenants.contact')}</TableHead>
                                     <TableHead>{t('tenants.idNumber')}</TableHead>
                                     <TableHead className="text-center">{t('common.status')}</TableHead>
+                                    <TableHead>{t('tenants.createdAt')}</TableHead>
                                     <TableHead className="w-[70px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -267,16 +275,19 @@ export default function TenantsPage() {
                                                 <span className="font-medium">{tenant.fullName}</span>
                                             </div>
                                         </TableCell>
+                                        <TableCell className="font-mono text-sm">{tenant.code}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-1 text-sm">
                                                     <Phone className="h-3 w-3" />
                                                     {tenant.phone}
                                                 </div>
-                                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                                    <Mail className="h-3 w-3" />
-                                                    {tenant.email}
-                                                </div>
+                                                {tenant.email && (
+                                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                        <Mail className="h-3 w-3" />
+                                                        {tenant.email}
+                                                    </div>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>{tenant.idNumber}</TableCell>
@@ -284,6 +295,9 @@ export default function TenantsPage() {
                                             <Badge variant={tenant.isActive ? 'default' : 'secondary'}>
                                                 {tenant.isActive ? t('common.active') : t('common.inactive')}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {new Date(tenant.createdAt).toLocaleDateString()}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">
@@ -325,11 +339,15 @@ export default function TenantsPage() {
                     </DialogHeader>
                     {selectedTenant && (
                         <TenantForm
+                            key={selectedTenant._id}
                             defaultValues={{
+                                code: selectedTenant.code,
                                 fullName: selectedTenant.fullName,
                                 email: selectedTenant.email,
                                 phone: selectedTenant.phone,
                                 idNumber: selectedTenant.idNumber,
+                                dateOfBirth: selectedTenant.dateOfBirth ? selectedTenant.dateOfBirth.split('T')[0] : '',
+                                gender: selectedTenant.gender,
                                 address: selectedTenant.address,
                                 occupation: selectedTenant.occupation,
                                 emergencyContact: selectedTenant.emergencyContact,

@@ -37,6 +37,8 @@ export default function TenantForm({
             email: '',
             phone: '',
             idNumber: '',
+            dateOfBirth: '',
+            gender: undefined,
             address: '',
             occupation: '',
             ...defaultValues,
@@ -46,6 +48,13 @@ export default function TenantForm({
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
+                {defaultValues?.code && (
+                    <div className="space-y-2">
+                        <Label>{t('tenants.code')}</Label>
+                        <Input value={defaultValues.code} disabled className="bg-muted" />
+                    </div>
+                )}
+
                 <div className="space-y-2">
                     <Label htmlFor="fullName">{t('tenants.fullName')} <span className="text-destructive">*</span></Label>
                     <Input
@@ -94,6 +103,32 @@ export default function TenantForm({
                     {errors.idNumber && (
                         <p className="text-sm text-destructive">{errors.idNumber.message}</p>
                     )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="dateOfBirth">{t('tenants.dateOfBirth')}</Label>
+                        <Input
+                            id="dateOfBirth"
+                            type="date"
+                            {...register('dateOfBirth')}
+                            defaultValue={defaultValues?.dateOfBirth || ''}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="gender">{t('tenants.gender')}</Label>
+                        <select
+                            id="gender"
+                            {...register('gender')}
+                            defaultValue={defaultValues?.gender || ''}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                            <option value="">{t('tenants.selectGender')}</option>
+                            <option value="MALE">{t('tenants.genderMale')}</option>
+                            <option value="FEMALE">{t('tenants.genderFemale')}</option>
+                            <option value="OTHER">{t('tenants.genderOther')}</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="space-y-2">

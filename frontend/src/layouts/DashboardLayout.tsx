@@ -14,6 +14,7 @@ import {
     Menu,
     X,
     Layers,
+    Wrench,
 } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -46,6 +47,7 @@ export default function DashboardLayout() {
         { icon: DoorOpen, label: t('menu.rooms'), path: '/rooms' },
         { icon: Layers, label: t('menu.roomGroups'), path: '/room-groups' },
         { icon: Users, label: t('menu.tenants'), path: '/tenants' },
+        { icon: Wrench, label: t('menu.services'), path: '/services' },
         { icon: FileText, label: t('menu.contracts'), path: '/contracts' },
         { icon: Receipt, label: t('menu.invoices'), path: '/invoices' },
         { icon: CreditCard, label: t('menu.payments'), path: '/payments' },

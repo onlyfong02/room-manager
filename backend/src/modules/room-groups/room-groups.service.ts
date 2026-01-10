@@ -8,9 +8,27 @@ import { CreateRoomGroupDto, UpdateRoomGroupDto } from './dto/room-group.dto';
 export class RoomGroupsService {
     constructor(@InjectModel(RoomGroup.name) private roomGroupModel: Model<RoomGroupDocument>) { }
 
+    private generateCode(): string {
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const random = Math.floor(1000 + Math.random() * 9000);
+        return `GP-${timestamp}-${random}`;
+    }
+
     async create(ownerId: string, createRoomGroupDto: CreateRoomGroupDto): Promise<RoomGroup> {
+        let code = this.generateCode();
+
+        // Ensure uniqueness
+        let attempts = 0;
+        while (attempts < 5) {
+            const existing = await this.roomGroupModel.findOne({ code, ownerId: new Types.ObjectId(ownerId) }).exec();
+            if (!existing) break;
+            code = this.generateCode() + Math.floor(Math.random() * 10);
+            attempts++;
+        }
+
         const roomGroup = new this.roomGroupModel({
             ...createRoomGroupDto,
+            code,
             ownerId: new Types.ObjectId(ownerId),
             buildingId: new Types.ObjectId(createRoomGroupDto.buildingId),
         });

@@ -35,6 +35,7 @@ export const useRoomSchema = () => {
     const { t } = useTranslation();
 
     return z.object({
+        code: z.string().optional(),
         buildingId: z.string().min(1, t('validation.required', { field: t('rooms.building') })),
         // roomCode is auto-generated, not in form
         roomName: z.string().min(1, t('validation.required', { field: t('rooms.roomName') })),
@@ -186,6 +187,7 @@ export const useTenantSchema = () => {
     const { t } = useTranslation();
 
     return z.object({
+        code: z.string().optional(),
         fullName: z.string().min(1, t('validation.required', { field: t('tenants.fullName') })),
         email: z.string().email(t('validation.email', { field: t('tenants.email') })).optional().or(z.literal('')),
         phone: z.string()
@@ -194,6 +196,8 @@ export const useTenantSchema = () => {
                 message: t('validation.phone'),
             }),
         idNumber: z.string().min(1, t('validation.required', { field: t('tenants.idNumber') })),
+        dateOfBirth: z.string().optional().or(z.literal('')),
+        gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional().or(z.literal('')),
         address: z.string().optional(),
         occupation: z.string().optional(),
         emergencyContact: z.object({
@@ -208,6 +212,7 @@ export const useRoomGroupSchema = () => {
     const { t } = useTranslation();
 
     return z.object({
+        code: z.string().optional(),
         buildingId: z.string().min(1, t('validation.required', { field: t('rooms.building') })),
         name: z.string().min(1, t('validation.required', { field: t('roomGroups.name') })),
         description: z.string().optional(),
