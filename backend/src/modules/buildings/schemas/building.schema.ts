@@ -11,6 +11,9 @@ export class Building {
     @Prop({ required: true, trim: true })
     name: string;
 
+    @Prop({ required: true, trim: true, unique: true })
+    code: string;
+
     @Prop({
         type: {
             street: String,
@@ -40,3 +43,4 @@ export class Building {
 export const BuildingSchema = SchemaFactory.createForClass(Building);
 
 BuildingSchema.index({ ownerId: 1, isDeleted: 1 });
+BuildingSchema.index({ code: 1 });

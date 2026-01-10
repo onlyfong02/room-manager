@@ -47,12 +47,20 @@ export class CreateTenantDto {
     @IsString()
     @IsOptional()
     notes?: string;
+
+    @IsString()
+    @IsOptional()
+    occupation?: string;
 }
 
 export class UpdateTenantDto {
     @IsString()
     @IsOptional()
     fullName?: string;
+
+    @IsString()
+    @IsOptional()
+    idCard?: string;
 
     @IsString()
     @IsOptional()
@@ -84,6 +92,10 @@ export class UpdateTenantDto {
     @Type(() => EmergencyContactDto)
     @IsOptional()
     emergencyContact?: EmergencyContactDto;
+
+    @IsString()
+    @IsOptional()
+    occupation?: string;
 
     @IsString()
     @IsOptional()

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { I18nValidationPipe } from 'nestjs-i18n';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
@@ -14,8 +15,9 @@ async function bootstrap() {
     app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
     // Enable CORS
+    const corsOrigins = configService.get('CORS_ORIGIN')?.split(',') || ['http://localhost:5173', 'http://localhost:5174'];
     app.enableCors({
-        origin: configService.get('CORS_ORIGIN') || 'http://localhost:5173',
+        origin: corsOrigins,
         credentials: true,
     });
 
@@ -24,7 +26,7 @@ async function bootstrap() {
 
     // Global validation pipe
     app.useGlobalPipes(
-        new ValidationPipe({
+        new I18nValidationPipe({
             whitelist: true,
             forbidNonWhitelisted: true,
             transform: true,
@@ -34,7 +36,8 @@ async function bootstrap() {
         }),
     );
 
-    const port = configService.get('PORT') || 3000;
+    const port = process.env.PORT || 3000;
+    console.log(`Application is running on: http://localhost:${port} (Restarted at ${new Date().toISOString()})`);
     await app.listen(port);
 
     console.log(`🚀 Application is running on: http://localhost:${port}/${configService.get('API_PREFIX')}`);

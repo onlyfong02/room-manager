@@ -21,6 +21,9 @@ export class Tenant {
     @Prop({ trim: true })
     email: string;
 
+    @Prop({ trim: true })
+    occupation: string;
+
     @Prop()
     dateOfBirth: Date;
 

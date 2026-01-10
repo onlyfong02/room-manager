@@ -14,7 +14,10 @@ export class ContractsService {
     }
 
     async findAll(ownerId: string): Promise<Contract[]> {
-        return this.contractModel.find({ ownerId, isDeleted: false }).populate('roomId tenantId').exec();
+        return this.contractModel.find({ ownerId, isDeleted: false })
+            .populate('tenantId')
+            .populate({ path: 'roomId', populate: { path: 'buildingId' } })
+            .exec();
     }
 
     async findOne(id: string, ownerId: string): Promise<Contract> {

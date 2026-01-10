@@ -1,14 +1,30 @@
 {
     "validation": {
-        "required": "{{field}} là bắt buộc",
-        "invalid": "{{field}} không hợp lệ",
-        "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
-        "maxLength": "{{field}} không được vượt quá {{max}} ký tự"
+        "required": "{property} là bắt buộc",
+        "invalid": "{property} không hợp lệ",
+        "minLength": "{property} phải có ít nhất {constraints.0} ký tự",
+        "maxLength": "{property} không được vượt quá {constraints.0} ký tự",
+        "isNotEmpty": "{property} không được để trống",
+        "isString": "{property} phải là chuỗi ký tự",
+        "isNumber": "{property} phải là số",
+        "isEmail": "{property} phải là địa chỉ email hợp lệ",
+        "isMongoId": "{property} phải là ID hợp lệ",
+        "isEnum": "{property} phải là giá trị hợp lệ",
+        "isArray": "{property} phải là mảng",
+        "isBoolean": "{property} phải là true hoặc false",
+        "isDateString": "{property} phải là ngày hợp lệ",
+        "min": "{property} phải lớn hơn hoặc bằng {constraints.0}",
+        "max": "{property} phải nhỏ hơn hoặc bằng {constraints.0}",
+        "isPositive": "{property} phải là số dương",
+        "isOptional": "{property} là tùy chọn",
+        "isPhoneNumber": "{property} phải là số điện thoại hợp lệ",
+        "matches": "Định dạng {property} không hợp lệ"
     },
     "errors": {
         "internalServerError": "Lỗi máy chủ nội bộ",
         "unauthorized": "Truy cập không được phép",
         "forbidden": "Truy cập bị cấm",
-        "badRequest": "Yêu cầu không hợp lệ"
+        "badRequest": "Yêu cầu không hợp lệ",
+        "notFound": "Không tìm thấy tài nguyên"
     }
 }

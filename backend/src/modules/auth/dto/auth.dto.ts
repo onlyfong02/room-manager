@@ -1,30 +1,81 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, Validate, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
+
+@ValidatorConstraint({ name: 'MatchPassword', async: false })
+export class MatchPasswordConstraint implements ValidatorConstraintInterface {
+    validate(confirmPassword: string, args: ValidationArguments) {
+        const [relatedPropertyName] = args.constraints;
+        const relatedValue = (args.object as any)[relatedPropertyName];
+        return confirmPassword === relatedValue;
+    }
+
+    defaultMessage() {
+        return 'validation.PASSWORDS_NOT_MATCH';
+    }
+}
 
 export class RegisterDto {
-    @IsEmail()
-    @IsNotEmpty()
+    @IsEmail({}, {
+        message: i18nValidationMessage('validation.EMAIL'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
     email: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @MinLength(6)
+    @IsString({
+        message: i18nValidationMessage('validation.STRING'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
+    @MinLength(6, {
+        message: i18nValidationMessage('validation.MIN_LENGTH'),
+    })
     password: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsString({
+        message: i18nValidationMessage('validation.STRING'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
+    @Validate(MatchPasswordConstraint, ['password'], {
+        message: i18nValidationMessage('validation.PASSWORDS_NOT_MATCH'),
+    })
+    confirmPassword: string;
+
+    @IsString({
+        message: i18nValidationMessage('validation.STRING'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
     fullName: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsString({
+        message: i18nValidationMessage('validation.STRING'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
     phone: string;
 }
 
 export class LoginDto {
-    @IsEmail()
-    @IsNotEmpty()
+    @IsEmail({}, {
+        message: i18nValidationMessage('validation.EMAIL'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
     email: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsString({
+        message: i18nValidationMessage('validation.STRING'),
+    })
+    @IsNotEmpty({
+        message: i18nValidationMessage('validation.NOT_EMPTY'),
+    })
     password: string;
 }

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '@modules/users/users.service';
 import { RegisterDto, LoginDto } from '@modules/auth/dto/auth.dto';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
         private configService: ConfigService,
+        private i18n: I18nService,
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -37,7 +39,7 @@ export class AuthService {
         const user = await this.usersService.findByEmail(loginDto.email);
 
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'));
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -46,11 +48,11 @@ export class AuthService {
         );
 
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'));
         }
 
         if (!user.isActive) {
-            throw new UnauthorizedException('Account is inactive');
+            throw new UnauthorizedException(this.i18n.t('auth.errors.accountInactive'));
         }
 
         const tokens = await this.generateTokens(user._id.toString(), user.email);

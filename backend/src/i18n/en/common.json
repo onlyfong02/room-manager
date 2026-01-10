@@ -1,14 +1,30 @@
 {
     "validation": {
-        "required": "{{field}} is required",
-        "invalid": "{{field}} is invalid",
-        "minLength": "{{field}} must be at least {{min}} characters",
-        "maxLength": "{{field}} must be at most {{max}} characters"
+        "required": "{property} is required",
+        "invalid": "{property} is invalid",
+        "minLength": "{property} must be at least {constraints.0} characters",
+        "maxLength": "{property} must be at most {constraints.0} characters",
+        "isNotEmpty": "{property} should not be empty",
+        "isString": "{property} must be a string",
+        "isNumber": "{property} must be a number",
+        "isEmail": "{property} must be a valid email address",
+        "isMongoId": "{property} must be a valid ID",
+        "isEnum": "{property} must be a valid value",
+        "isArray": "{property} must be an array",
+        "isBoolean": "{property} must be a boolean",
+        "isDateString": "{property} must be a valid date",
+        "min": "{property} must be at least {constraints.0}",
+        "max": "{property} must be at most {constraints.0}",
+        "isPositive": "{property} must be a positive number",
+        "isOptional": "{property} is optional",
+        "isPhoneNumber": "{property} must be a valid phone number",
+        "matches": "{property} format is invalid"
     },
     "errors": {
         "internalServerError": "Internal server error",
         "unauthorized": "Unauthorized access",
         "forbidden": "Access forbidden",
-        "badRequest": "Bad request"
+        "badRequest": "Bad request",
+        "notFound": "Resource not found"
     }
 }

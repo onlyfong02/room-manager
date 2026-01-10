@@ -46,3 +46,14 @@ export enum PaymentMethod {
     ZALOPAY = 'ZALOPAY',
     OTHER = 'OTHER',
 }
+
+export enum RoomType {
+    LONG_TERM = 'LONG_TERM',     // Trọ
+    SHORT_TERM = 'SHORT_TERM',   // Ngắn hạn
+}
+
+export enum ShortTermPricingType {
+    HOURLY = 'HOURLY',   // Theo giờ
+    DAILY = 'DAILY',     // Theo ngày
+    FIXED = 'FIXED',     // Theo giá cố định
+}

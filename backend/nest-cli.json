@@ -5,6 +5,13 @@
     "compilerOptions": {
         "deleteOutDir": true,
         "webpack": true,
-        "webpackConfigPath": "webpack.config.js"
+        "webpackConfigPath": "webpack.config.js",
+        "assets": [
+            {
+                "include": "i18n/**/*",
+                "outDir": "dist"
+            }
+        ],
+        "watchAssets": true
     }
 }

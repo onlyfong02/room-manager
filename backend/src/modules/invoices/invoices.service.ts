@@ -38,7 +38,10 @@ export class InvoicesService {
     }
 
     async findAll(ownerId: string): Promise<Invoice[]> {
-        return this.invoiceModel.find({ ownerId, isDeleted: false }).populate('contractId roomId tenantId').exec();
+        return this.invoiceModel.find({ ownerId, isDeleted: false })
+            .populate('contractId tenantId')
+            .populate({ path: 'roomId', populate: { path: 'buildingId' } })
+            .exec();
     }
 
     async findOne(id: string, ownerId: string): Promise<Invoice> {

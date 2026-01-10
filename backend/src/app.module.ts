@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import { I18nModule, AcceptLanguageResolver, QueryResolver, HeaderResolver } from 'nestjs-i18n';
+import { APP_FILTER } from '@nestjs/core';
 import * as winston from 'winston';
 import * as path from 'path';
 import { DatabaseConfig } from './config/database.config';
@@ -14,6 +15,8 @@ import { TenantsModule } from './modules/tenants/tenants.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { RoomGroupsModule } from './modules/room-groups/room-groups.module';
+import { I18nValidationExceptionFilter } from './common/filters/i18n-validation.filter';
 
 @Module({
     imports: [
@@ -33,6 +36,11 @@ import { PaymentsModule } from './modules/payments/payments.module';
                 AcceptLanguageResolver,
                 new HeaderResolver(['x-lang']),
             ],
+        }),
+
+        // Database
+        MongooseModule.forRootAsync({
+            useClass: DatabaseConfig,
         }),
 
         // Logging
@@ -74,6 +82,14 @@ import { PaymentsModule } from './modules/payments/payments.module';
         ContractsModule,
         InvoicesModule,
         PaymentsModule,
+        RoomGroupsModule,
+    ],
+    providers: [
+        {
+            provide: APP_FILTER,
+            useClass: I18nValidationExceptionFilter,
+        },
     ],
 })
 export class AppModule { }
+

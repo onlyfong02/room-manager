@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { BuildingsService } from './buildings.service';
 import { CreateBuildingDto, UpdateBuildingDto } from './dto/building.dto';
+import { BuildingQueryDto } from './dto/building-query.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -9,14 +10,19 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 export class BuildingsController {
     constructor(private readonly buildingsService: BuildingsService) { }
 
+    @Post('sync-counts')
+    syncCounts(@CurrentUser() user: any) {
+        return this.buildingsService.syncRoomCounts(user.userId);
+    }
+
     @Post()
     create(@CurrentUser() user: any, @Body() createBuildingDto: CreateBuildingDto) {
         return this.buildingsService.create(user.userId, createBuildingDto);
     }
 
     @Get()
-    findAll(@CurrentUser() user: any) {
-        return this.buildingsService.findAll(user.userId);
+    findAll(@CurrentUser() user: any, @Query() query: BuildingQueryDto) {
+        return this.buildingsService.findAll(user.userId, query);
     }
 
     @Get(':id')

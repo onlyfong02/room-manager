@@ -14,7 +14,7 @@ export class TenantsService {
     }
 
     async findAll(ownerId: string): Promise<Tenant[]> {
-        return this.tenantModel.find({ ownerId, isDeleted: false }).exec();
+        return this.tenantModel.find({ ownerId, isDeleted: false }).sort({ createdAt: -1 }).exec();
     }
 
     async findOne(id: string, ownerId: string): Promise<Tenant> {

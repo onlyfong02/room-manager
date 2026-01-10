@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
 import {
     Home,
     Building2,
@@ -10,16 +11,29 @@ import {
     Receipt,
     CreditCard,
     LogOut,
-    Menu
+    Menu,
+    X,
+    Layers,
 } from 'lucide-react';
-import { useState } from 'react';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
+import BuildingSelector from '@/components/BuildingSelector';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function DashboardLayout() {
     const { t } = useTranslation();
-    const { user, logout } = useAuthStore();
     const navigate = useNavigate();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const { user, logout } = useAuthStore();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -27,70 +41,125 @@ export default function DashboardLayout() {
     };
 
     const menuItems = [
-        { icon: Home, label: t('nav.dashboard'), path: '/' },
-        { icon: Building2, label: t('nav.buildings'), path: '/buildings' },
-        { icon: DoorOpen, label: t('nav.rooms'), path: '/rooms' },
-        { icon: Users, label: t('nav.tenants'), path: '/tenants' },
-        { icon: FileText, label: t('nav.contracts'), path: '/contracts' },
-        { icon: Receipt, label: t('nav.invoices'), path: '/invoices' },
-        { icon: CreditCard, label: t('nav.payments'), path: '/payments' },
+        { icon: Home, label: t('menu.dashboard'), path: '/' },
+        { icon: Building2, label: t('menu.buildings'), path: '/buildings' },
+        { icon: DoorOpen, label: t('menu.rooms'), path: '/rooms' },
+        { icon: Layers, label: t('menu.roomGroups'), path: '/room-groups' },
+        { icon: Users, label: t('menu.tenants'), path: '/tenants' },
+        { icon: FileText, label: t('menu.contracts'), path: '/contracts' },
+        { icon: Receipt, label: t('menu.invoices'), path: '/invoices' },
+        { icon: CreditCard, label: t('menu.payments'), path: '/payments' },
     ];
 
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
     return (
-        <div className="flex h-screen bg-gray-50">
-            {/* Sidebar */}
-            <aside
-                className={`${sidebarOpen ? 'w-64' : 'w-20'
-                    } bg-white border-r border-gray-200 transition-all duration-300`}
-            >
-                <div className="flex items-center justify-between p-4 border-b">
-                    {sidebarOpen && <h1 className="text-xl font-bold text-primary">Room Manager</h1>}
-                    <button
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+            {/* Top Navigation Bar */}
+            <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-slate-950 shadow-sm">
+                <div className="flex h-16 items-center px-4 gap-4">
+                    {/* Mobile Menu Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="lg:hidden"
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 rounded-lg hover:bg-gray-100"
                     >
-                        <Menu className="w-5 h-5" />
-                    </button>
+                        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
+
+                    {/* Logo/Title */}
+                    <Link to="/" className="flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity">
+                        <Building2 className="h-6 w-6 text-primary" />
+                        <span className="hidden sm:inline-block">Room Manager</span>
+                    </Link>
+
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* Right Side Actions */}
+                    <div className="flex items-center gap-3">
+                        <div className="hidden sm:block">
+                            <BuildingSelector />
+                        </div>
+                        <LanguageSwitcher />
+                        <ThemeToggle />
+
+                        {/* User Dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                                    <Avatar>
+                                        <AvatarFallback className="bg-primary text-primary-foreground">
+                                            {user?.fullName ? getInitials(user.fullName) : 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="end" forceMount>
+                                <DropdownMenuLabel className="font-normal">
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-medium leading-none">{user?.fullName}</p>
+                                        <p className="text-xs leading-none text-muted-foreground">
+                                            {user?.email}
+                                        </p>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>{t('menu.logout')}</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
+            </header>
 
-                <nav className="p-4 space-y-2">
-                    {menuItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                        >
-                            <item.icon className="w-5 h-5" />
-                            {sidebarOpen && <span>{item.label}</span>}
-                        </Link>
-                    ))}
-                </nav>
-            </aside>
-
-            {/* Main content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Header */}
-                <header className="bg-white border-b border-gray-200 px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold">{t('header.title')}</h2>
-                        <div className="flex items-center gap-4">
-                            <LanguageSwitcher />
-                            <span className="text-sm text-gray-600">
-                                {t('header.greeting', { name: user?.fullName })}
-                            </span>
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                {t('auth.logout')}
-                            </button>
+            <div className="flex">
+                {/* Sidebar */}
+                <aside
+                    className={`
+                        fixed inset-y-0 left-0 z-40 w-64 transform border-r bg-white dark:bg-slate-950 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+                        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                    `}
+                >
+                    <div className="flex h-full flex-col pt-16 lg:pt-0">
+                        <div className="flex-1 overflow-y-auto py-4">
+                            <nav className="space-y-1 px-2">
+                                {menuItems.map((item) => (
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </nav>
                         </div>
                     </div>
-                </header>
+                </aside>
 
-                {/* Page content */}
-                <main className="flex-1 overflow-auto p-6">
+                {/* Overlay for mobile */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
+
+                {/* Main Content */}
+                <main className="flex-1 overflow-y-auto p-4 lg:p-8">
                     <Outlet />
                 </main>
             </div>
