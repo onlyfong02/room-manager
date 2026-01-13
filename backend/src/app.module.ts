@@ -57,21 +57,23 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
                         }),
                     ),
                 }),
-                new winston.transports.File({
-                    filename: 'logs/error.log',
-                    level: 'error',
-                    format: winston.format.combine(
-                        winston.format.timestamp(),
-                        winston.format.json(),
-                    ),
-                }),
-                new winston.transports.File({
-                    filename: 'logs/combined.log',
-                    format: winston.format.combine(
-                        winston.format.timestamp(),
-                        winston.format.json(),
-                    ),
-                }),
+                ...(process.env.VERCEL ? [] : [
+                    new winston.transports.File({
+                        filename: 'logs/error.log',
+                        level: 'error',
+                        format: winston.format.combine(
+                            winston.format.timestamp(),
+                            winston.format.json(),
+                        ),
+                    }),
+                    new winston.transports.File({
+                        filename: 'logs/combined.log',
+                        format: winston.format.combine(
+                            winston.format.timestamp(),
+                            winston.format.json(),
+                        ),
+                    }),
+                ]),
             ],
         }),
 
