@@ -28,6 +28,7 @@ import apiClient from '@/api/client';
 import Pagination from '@/components/Pagination';
 import BuildingForm, { BuildingFormData } from '@/components/forms/BuildingForm';
 import { formatCellValue } from '@/utils/tableUtils';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Address {
     street: string;
@@ -72,6 +73,7 @@ export default function BuildingsPage() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -81,8 +83,8 @@ export default function BuildingsPage() {
 
     // Debounce search term would be ideal, but for now passing directly
     const { data, isPending, error } = useQuery({
-        queryKey: ['buildings', { page: currentPage, limit: pageSize, search: searchTerm }],
-        queryFn: () => buildingsApi.getAll({ page: currentPage, limit: pageSize, search: searchTerm }),
+        queryKey: ['buildings', { page: currentPage, limit: pageSize, search: debouncedSearchTerm }],
+        queryFn: () => buildingsApi.getAll({ page: currentPage, limit: pageSize, search: debouncedSearchTerm }),
     });
 
     console.log('VERSION: 1.0.2 - Fixed Map & V5 Pending');
@@ -184,7 +186,12 @@ export default function BuildingsPage() {
                             {t('buildings.add')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent
+                        className="max-w-md"
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={(e) => e.preventDefault()}
+                    >
+
                         <DialogHeader>
                             <DialogTitle>{t('buildings.addTitle')}</DialogTitle>
                             <DialogDescription>{t('buildings.addDescription')}</DialogDescription>
@@ -286,7 +293,12 @@ export default function BuildingsPage() {
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent
+                    className="max-w-md"
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('buildings.editTitle')}</DialogTitle>
                         <DialogDescription>{t('buildings.editDescription')}</DialogDescription>
@@ -312,7 +324,11 @@ export default function BuildingsPage() {
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('buildings.deleteTitle')}</DialogTitle>
                         <DialogDescription>

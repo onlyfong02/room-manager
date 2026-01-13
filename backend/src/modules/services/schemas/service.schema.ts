@@ -29,6 +29,9 @@ export class Service {
     @Prop({ required: true, trim: true })
     name: string;
 
+    @Prop({ trim: true, index: true })
+    nameNormalized: string;
+
     @Prop({ required: true, trim: true })
     unit: string;
 

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { ContractType, ContractStatus, PaymentCycle } from '@common/constants/enums';
+import { ContractType, ContractStatus, PaymentCycle, RoomType, ShortTermPricingType } from '@common/constants/enums';
+import { ShortTermPriceTierSchema, ShortTermPriceTier } from '../../rooms/schemas/room.schema';
 
 export type ContractDocument = Contract & Document;
 
@@ -15,13 +16,16 @@ export class Contract {
     @Prop({ type: Types.ObjectId, ref: 'Tenant', required: true, index: true })
     tenantId: Types.ObjectId;
 
+    @Prop({ unique: true, sparse: true, index: true })
+    contractCode: string;
+
     @Prop({ type: String, enum: ContractType, default: ContractType.LONG_TERM })
     contractType: ContractType;
 
     @Prop({ required: true })
     startDate: Date;
 
-    @Prop({ required: true })
+    @Prop()
     endDate: Date;
 
     @Prop({ required: true, default: 0 })
@@ -36,10 +40,30 @@ export class Contract {
     @Prop({ default: 0 })
     waterPrice: number;
 
+    // === Pricing Overrides ===
+    @Prop({ type: String, enum: RoomType, default: RoomType.LONG_TERM })
+    roomType: RoomType;
+
+    @Prop({ type: String, enum: ShortTermPricingType })
+    shortTermPricingType: ShortTermPricingType;
+
+    @Prop({ type: String, enum: ['PER_HOUR', 'TABLE'] })
+    hourlyPricingMode: string;
+
+    @Prop({ default: 0 })
+    pricePerHour: number;
+
+    @Prop({ default: 0 })
+    fixedPrice: number;
+
+    @Prop({ type: [ShortTermPriceTierSchema], default: [] })
+    shortTermPrices: ShortTermPriceTier[];
+
     @Prop({
         type: [{
             name: String,
             amount: Number,
+            quantity: { type: Number, default: 1 },
             isRecurring: Boolean,
         }],
         default: [],
@@ -52,6 +76,9 @@ export class Contract {
 
     @Prop({ type: String, enum: PaymentCycle, default: PaymentCycle.MONTHLY })
     paymentCycle: PaymentCycle;
+
+    @Prop({ default: 1 })
+    paymentCycleMonths: number;
 
     @Prop({ default: 1 })
     paymentDueDay: number;

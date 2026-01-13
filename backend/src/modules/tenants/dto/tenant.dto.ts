@@ -1,6 +1,7 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail, IsDateString, IsEnum, IsMongoId, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsEmail, IsDateString, IsEnum, IsMongoId, ValidateNested, IsBoolean, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TenantStatus } from '@common/constants/enums';
+import { PaginationDto } from '@common/dto/pagination.dto';
 
 class EmergencyContactDto {
     @IsString()
@@ -57,6 +58,11 @@ export class CreateTenantDto {
     @IsString()
     @IsOptional()
     occupation?: string;
+
+    @IsEnum(TenantStatus)
+    @IsIn([TenantStatus.ACTIVE, TenantStatus.CLOSED], { message: 'Cannot manually set status to RENTING' })
+    @IsOptional()
+    status?: TenantStatus;
 }
 
 export class UpdateTenantDto {
@@ -97,6 +103,7 @@ export class UpdateTenantDto {
     moveOutDate?: string;
 
     @IsEnum(TenantStatus)
+    @IsIn([TenantStatus.ACTIVE, TenantStatus.CLOSED], { message: 'Cannot manually set status to RENTING' })
     @IsOptional()
     status?: TenantStatus;
 
@@ -116,4 +123,18 @@ export class UpdateTenantDto {
     @IsString()
     @IsOptional()
     notes?: string;
+}
+
+export class GetTenantsDto extends PaginationDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsEnum(TenantStatus)
+    status?: TenantStatus;
+
+    @IsOptional()
+    @IsMongoId()
+    currentRoomId?: string;
 }

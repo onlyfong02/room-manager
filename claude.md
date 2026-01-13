@@ -15,6 +15,7 @@
 - **Hợp đồng (Contracts)**: Quản lý hợp đồng với các kỳ thanh toán khác nhau
 - **Hóa đơn (Invoices)**: Tự động tạo và theo dõi hóa đơn
 - **Thanh toán (Payments)**: Ghi nhận và giám sát thanh toán
+- **Dịch vụ (Services)**: Quản lý dịch vụ (điện, nước, internet...) với cấu hình giá đa dạng (cố định, bậc thang) và phạm vi áp dụng (toàn bộ hoặc theo tòa nhà)
 
 ---
 
@@ -71,7 +72,8 @@ room-manager/
 │           ├── tenants/      # Tenant management
 │           ├── contracts/    # Contract management
 │           ├── invoices/     # Invoice generation
-│           └── payments/     # Payment tracking
+│           ├── payments/     # Payment tracking
+│           └── services/     # Service management (electricity, water, etc.)
 ├── frontend/
 │   ├── public/
 │   │   └── locales/          # Translation files (en/, vi/)
@@ -218,6 +220,26 @@ interface PriceTier {
     fromValue: number,  // Giờ/ngày bắt đầu (tier đầu luôn = 0)
     toValue: number,    // Giờ/ngày kết thúc (-1 = còn lại)
     price: number,      // Giá cho tier này
+}
+```
+
+### Dịch Vụ (Services)
+```typescript
+{
+    code: string,                // Mã dịch vụ (unique)
+    name: string,                // Tên dịch vụ
+    unit: string,                // Đơn vị tính (kWh, m3, người, phòng...)
+    priceType: 'FIXED' | 'TABLE',
+    
+    // Nếu FIXED
+    fixedPrice: number,
+    
+    // Nếu TABLE (Lũy tiến - Bậc thang)
+    priceTiers: ServicePriceTier[], // Giống cấu trúc PriceTier ở trên
+
+    // Phạm vi áp dụng
+    buildingScope: 'ALL' | 'SPECIFIC',
+    buildingIds?: ObjectId[],    // Nếu SPECIFIC
 }
 ```
 

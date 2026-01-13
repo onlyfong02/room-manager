@@ -14,6 +14,9 @@ export class RoomGroup {
     @Prop({ required: true, trim: true })
     name: string;
 
+    @Prop({ trim: true, index: true })
+    nameNormalized: string;
+
     @Prop({ required: true, unique: true, trim: true })
     code: string;
 

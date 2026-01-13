@@ -15,6 +15,11 @@ import {
     X,
     Layers,
     Wrench,
+    Settings,
+    HelpCircle,
+    Bug,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -35,6 +40,7 @@ export default function DashboardLayout() {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -63,14 +69,12 @@ export default function DashboardLayout() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
             {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-slate-950 shadow-sm">
+            <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-slate-950 shadow-sm shrink-0">
                 <div className="flex h-16 items-center px-4 gap-4">
                     {/* Mobile Menu Button */}
                     <Button
-                        variant="ghost"
-                        size="icon"
                         className="lg:hidden"
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                     >
@@ -115,6 +119,19 @@ export default function DashboardLayout() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>{t('menu.settings')}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate('/help')}>
+                                    <HelpCircle className="mr-2 h-4 w-4" />
+                                    <span>{t('menu.help')}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate('/bug-report')}>
+                                    <Bug className="mr-2 h-4 w-4" />
+                                    <span>{t('menu.bugReport')}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>{t('menu.logout')}</span>
@@ -125,29 +142,54 @@ export default function DashboardLayout() {
                 </div>
             </header>
 
-            <div className="flex">
+            <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
                 <aside
                     className={`
-                        fixed inset-y-0 left-0 z-40 w-64 transform border-r bg-white dark:bg-slate-950 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+                        fixed inset-y-0 left-0 z-40 bg-white dark:bg-slate-950 transition-all duration-300 ease-in-out border-r
+                        lg:static lg:translate-x-0 h-full
                         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                        ${isCollapsed ? 'lg:w-16' : 'lg:w-64'}
                     `}
                 >
-                    <div className="flex h-full flex-col pt-16 lg:pt-0">
-                        <div className="flex-1 overflow-y-auto py-4">
+                    <div className="flex flex-col h-full relative">
+                        <div className="flex-1 overflow-y-auto py-4 scrollbar-thin">
                             <nav className="space-y-1 px-2">
                                 {menuItems.map((item) => (
                                     <Link
                                         key={item.path}
                                         to={item.path}
                                         onClick={() => setSidebarOpen(false)}
-                                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                                        title={isCollapsed ? item.label : ''}
+                                        className={`
+                                            flex items-center rounded-lg transition-all duration-300
+                                            text-slate-700 hover:bg-slate-100 hover:text-slate-900 
+                                            dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50
+                                            h-10 px-3
+                                        `}
                                     >
-                                        <item.icon className="h-5 w-5" />
-                                        {item.label}
+                                        <item.icon className="h-5 w-5 shrink-0" />
+                                        <span className={`
+                                            ml-3 truncate transition-all duration-300 whitespace-nowrap
+                                            ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}
+                                        `}>
+                                            {item.label}
+                                        </span>
                                     </Link>
                                 ))}
                             </nav>
+                        </div>
+
+                        {/* Collapse Toggle - Desktop only */}
+                        <div className="hidden lg:block absolute -right-4 top-6 z-50">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setIsCollapsed(!isCollapsed)}
+                                className="h-8 w-8 rounded-full bg-white dark:bg-slate-950 shadow-md border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+                            >
+                                {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                            </Button>
                         </div>
                     </div>
                 </aside>

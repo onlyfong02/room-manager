@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto } from './dto/room.dto';
+import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from './dto/room.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -15,8 +15,8 @@ export class RoomsController {
     }
 
     @Get()
-    findAll(@CurrentUser() user: any, @Query('buildingId') buildingId?: string) {
-        return this.roomsService.findAll(user.userId, buildingId);
+    findAll(@CurrentUser() user: any, @Query() query: GetRoomsDto) {
+        return this.roomsService.findAll(user.userId, query);
     }
 
     @Get(':id')

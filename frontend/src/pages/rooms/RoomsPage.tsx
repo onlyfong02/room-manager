@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, DoorOpen, Search, Zap, Droplets } from 'lucide-react';
@@ -31,6 +31,7 @@ import { useBuildingStore } from '@/stores/buildingStore';
 import { formatCellValue } from '@/utils/tableUtils';
 import RoomForm, { RoomFormData } from '@/components/forms/RoomForm';
 import { PriceTablePopover } from '@/components/PriceTablePopover';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ShortTermPriceTier {
     fromValue: number;
@@ -47,7 +48,7 @@ interface Room {
     floor: number;
     area?: number;
     maxOccupancy?: number;
-    status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+    status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'DEPOSITED';
     amenities: string[];
     description?: string;
     // New fields
@@ -65,8 +66,8 @@ interface Room {
 }
 
 const roomsApi = {
-    getAll: async (): Promise<Room[]> => {
-        const response = await apiClient.get('/rooms');
+    getAll: async (params: { page: number; limit: number; search?: string; buildingId?: string }) => {
+        const response = await apiClient.get('/rooms', { params });
         return response.data;
     },
     create: async (data: RoomFormData) => {
@@ -84,7 +85,8 @@ const roomsApi = {
     update: async (id: string, data: Partial<RoomFormData>) => {
         // Clean up empty strings for optional MongoID fields
         // Also exclude buildingId as it cannot be changed after creation
-        const { buildingId, ...updateData } = data;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { buildingId: _, ...updateData } = data;
         const cleanData = {
             ...updateData,
             roomGroupId: updateData.roomGroupId || undefined,
@@ -106,6 +108,7 @@ export default function RoomsPage() {
     const queryClient = useQueryClient();
     const { selectedBuildingId } = useBuildingStore();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -113,10 +116,18 @@ export default function RoomsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { data: rooms = [], isLoading } = useQuery({
-        queryKey: ['rooms'],
-        queryFn: roomsApi.getAll,
+    const { data: roomsData, isLoading } = useQuery({
+        queryKey: ['rooms', { page: currentPage, limit: pageSize, search: debouncedSearchTerm, buildingId: selectedBuildingId }],
+        queryFn: () => roomsApi.getAll({
+            page: currentPage,
+            limit: pageSize,
+            search: debouncedSearchTerm,
+            buildingId: selectedBuildingId || undefined
+        }),
     });
+
+    const rooms: Room[] = Array.isArray(roomsData?.data) ? roomsData.data : [];
+    const meta = roomsData?.meta || { total: 0, totalPages: 0 };
 
     const createMutation = useMutation({
         mutationFn: roomsApi.create,
@@ -213,6 +224,16 @@ export default function RoomsPage() {
                         {t('rooms.statusMaintenance')}
                     </Badge>
                 );
+            case 'DEPOSITED':
+                return (
+                    <Badge
+                        className={`bg-orange-500 ${baseClasses}`}
+                        onClick={() => isClickable && handleQuickStatusToggle(room)}
+                        title={isClickable ? t('rooms.clickToToggleStatus') : undefined}
+                    >
+                        {t('rooms.statusDeposited')}
+                    </Badge>
+                );
             default:
                 return <Badge variant="outline">{room.status}</Badge>;
         }
@@ -268,25 +289,6 @@ export default function RoomsPage() {
         }
         return t('rooms.priceTable');
     };
-
-    // Filter by selected building first, then by search
-    const buildingFilteredRooms = selectedBuildingId
-        ? rooms.filter(room => room.buildingId?._id === selectedBuildingId)
-        : rooms;
-
-    const filteredRooms = buildingFilteredRooms.filter(
-        (room) =>
-            room.roomCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            room.roomName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            room.buildingId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Pagination
-    const totalPages = Math.ceil(filteredRooms.length / pageSize);
-    const paginatedRooms = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredRooms.slice(start, start + pageSize);
-    }, [filteredRooms, currentPage, pageSize]);
 
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
@@ -372,7 +374,12 @@ export default function RoomsPage() {
                             {t('rooms.add')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
+                    <DialogContent
+                        className="max-w-3xl"
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={(e) => e.preventDefault()}
+                    >
+
                         <DialogHeader>
                             <DialogTitle>{t('rooms.addTitle')}</DialogTitle>
                             <DialogDescription>{t('rooms.addDescription')}</DialogDescription>
@@ -408,13 +415,13 @@ export default function RoomsPage() {
                         {t('rooms.list')}
                     </CardTitle>
                     <CardDescription>
-                        {t('rooms.totalCount', { count: filteredRooms.length })}
+                        {t('rooms.totalCount', { count: meta.total })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-                    ) : filteredRooms.length === 0 ? (
+                    ) : rooms.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">{t('rooms.noData')}</div>
                     ) : (
                         <Table>
@@ -431,7 +438,7 @@ export default function RoomsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedRooms.map((room) => (
+                                {rooms.map((room) => (
                                     <TableRow key={room._id}>
                                         <TableCell className="font-medium">{formatCellValue(room.roomName)}</TableCell>
                                         <TableCell className="font-mono text-muted-foreground">{formatCellValue(room.roomCode)}</TableCell>
@@ -455,12 +462,12 @@ export default function RoomsPage() {
                             </TableBody>
                         </Table>
                     )}
-                    {filteredRooms.length > 0 && (
+                    {meta.total > 0 && (
                         <Pagination
                             currentPage={currentPage}
-                            totalPages={totalPages}
+                            totalPages={meta.totalPages}
                             pageSize={pageSize}
-                            totalItems={filteredRooms.length}
+                            totalItems={meta.total}
                             onPageChange={setCurrentPage}
                             onPageSizeChange={(size) => {
                                 setPageSize(size);
@@ -473,7 +480,12 @@ export default function RoomsPage() {
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-w-3xl">
+                <DialogContent
+                    className="max-w-3xl"
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('rooms.editTitle')}</DialogTitle>
                         <DialogDescription>{t('rooms.editDescription')}</DialogDescription>
@@ -496,7 +508,11 @@ export default function RoomsPage() {
 
             {/* Delete Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('rooms.deleteTitle')}</DialogTitle>
                         <DialogDescription>

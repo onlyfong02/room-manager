@@ -57,4 +57,26 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Date picker icon alignment fix */
+  input[type="date"] {
+    display: block !important;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ensure the input container has position relative if needed, 
+     but standard inputs are generally enough for relative positioning of children in some engines.
+     However, to be safe: */
+  input[type="date"] {
+    position: relative;
+  }
 }

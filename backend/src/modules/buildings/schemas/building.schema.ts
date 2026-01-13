@@ -11,6 +11,9 @@ export class Building {
     @Prop({ required: true, trim: true })
     name: string;
 
+    @Prop()
+    nameNormalized: string;
+
     @Prop({ required: true, trim: true, unique: true })
     code: string;
 

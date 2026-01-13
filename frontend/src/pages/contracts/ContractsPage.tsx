@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, FileText, Search, MoreHorizontal, Calendar } from 'lucide-react';
+import { Plus, MoreHorizontal, FileText, Calendar, Pencil, Trash2, Search, Zap, Droplets } from 'lucide-react';
+import { PriceTablePopover } from '@/components/PriceTablePopover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,22 +33,39 @@ import { toast } from '@/hooks/use-toast';
 import apiClient from '@/api/client';
 import Pagination from '@/components/Pagination';
 import { useBuildingStore } from '@/stores/buildingStore';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Contract {
     _id: string;
-    tenant: { _id: string; fullName: string };
-    room: { _id: string; roomCode: string; buildingId?: { _id: string; name: string } };
+    contractCode: string;
+    tenantId: { _id: string; fullName: string; phone: string };
+    roomId: { _id: string; roomCode: string; roomName: string; buildingId?: { _id: string; name: string } };
     startDate: string;
     endDate: string;
-    monthlyRent: number;
-    deposit: number;
-    status: 'active' | 'expired' | 'terminated';
+    rentPrice: number;
+    depositAmount: number;
+    electricityPrice?: number;
+    waterPrice?: number;
+    initialElectricIndex?: number;
+    initialWaterIndex?: number;
+    contractType?: 'LONG_TERM' | 'SHORT_TERM'; // Made optional as roomType might be used
+    roomType?: 'LONG_TERM' | 'SHORT_TERM';
+    shortTermPricingType?: 'HOURLY' | 'DAILY' | 'FIXED';
+    hourlyPricingMode?: 'PER_HOUR' | 'TABLE';
+    pricePerHour?: number;
+    fixedPrice?: number;
+    shortTermPrices?: any[];
+    paymentDueDay?: number;
+    paymentCycle: 'MONTHLY' | 'MONTHLY_2' | 'QUARTERLY' | 'MONTHLY_6' | 'MONTHLY_12' | 'CUSTOM';
+    paymentCycleMonths?: number;
+    serviceCharges: Array<{ name: string; amount: number; quantity?: number; isRecurring: boolean }>;
+    status: 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
     createdAt: string;
 }
 
 const contractsApi = {
-    getAll: async (): Promise<Contract[]> => {
-        const response = await apiClient.get('/contracts');
+    getAll: async (params: any): Promise<any> => {
+        const response = await apiClient.get('/contracts', { params });
         return response.data;
     },
     create: async (data: Partial<Contract>) => {
@@ -62,22 +80,40 @@ const contractsApi = {
         const response = await apiClient.delete(`/contracts/${id}`);
         return response.data;
     },
+    activate: async (id: string, data: { startDate: string; endDate?: string | null }) => {
+        const response = await apiClient.put(`/contracts/${id}/activate`, data);
+        return response.data;
+    },
 };
+
+import ContractForm from './ContractForm';
+import { ActivateContractDialog } from '@/components/ActivateContractDialog';
 
 export default function ContractsPage() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const { selectedBuildingId } = useBuildingStore();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isActivateOpen, setIsActivateOpen] = useState(false);
     const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { data: contracts = [], isLoading } = useQuery({
-        queryKey: ['contracts'],
-        queryFn: contractsApi.getAll,
+    const { data: contractsData, isLoading } = useQuery({
+        queryKey: ['contracts', { page: currentPage, limit: pageSize, search: debouncedSearchTerm, buildingId: selectedBuildingId }],
+        queryFn: () => contractsApi.getAll({
+            page: currentPage,
+            limit: pageSize,
+            search: debouncedSearchTerm,
+            buildingId: selectedBuildingId || undefined
+        }),
     });
+
+    const contracts: Contract[] = Array.isArray(contractsData?.data) ? contractsData.data : [];
+    const meta = contractsData?.meta || { total: 0, totalPages: 0 };
 
     const deleteMutation = useMutation({
         mutationFn: contractsApi.delete,
@@ -92,6 +128,26 @@ export default function ContractsPage() {
         },
     });
 
+    const activateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => contractsApi.activate(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['contracts'] });
+            queryClient.invalidateQueries({ queryKey: ['rooms'] });
+            queryClient.invalidateQueries({ queryKey: ['tenants'] });
+            setIsActivateOpen(false);
+            setSelectedContract(null);
+            toast({ title: t('contracts.activateSuccess') });
+        },
+        onError: (err: any) => {
+            toast({ variant: 'destructive', title: err.response?.data?.message || t('contracts.activateError') });
+        }
+    });
+
+    const handleActivate = (contract: Contract) => {
+        setSelectedContract(contract);
+        setIsActivateOpen(true);
+    };
+
     const handleDelete = (contract: Contract) => {
         setSelectedContract(contract);
         setIsDeleteOpen(true);
@@ -99,12 +155,14 @@ export default function ContractsPage() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'active':
+            case 'ACTIVE':
                 return <Badge className="bg-green-500">{t('contracts.statusActive')}</Badge>;
-            case 'expired':
+            case 'EXPIRED':
                 return <Badge variant="secondary">{t('contracts.statusExpired')}</Badge>;
-            case 'terminated':
+            case 'TERMINATED':
                 return <Badge variant="destructive">{t('contracts.statusTerminated')}</Badge>;
+            case 'DRAFT':
+                return <Badge variant="outline" className="border-orange-500 text-orange-500 bg-orange-50">{t('contracts.statusDraft')}</Badge>;
             default:
                 return <Badge variant="outline">{status}</Badge>;
         }
@@ -114,27 +172,104 @@ export default function ContractsPage() {
         return new Date(date).toLocaleDateString('vi-VN');
     };
 
-    const formatCurrency = (amount: number) => {
+    const formatCurrency = (amount: number | undefined) => {
+        if (amount === undefined || amount === null) return '-';
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    // Filter by selected building first, then by search
-    const buildingFilteredContracts = selectedBuildingId
-        ? contracts.filter(contract => contract.room?.buildingId?._id === selectedBuildingId)
-        : contracts;
+    const getContractTypeBadge = (roomType: string | undefined, contractType: string | undefined) => {
+        // roomType is the definitive Long/Short term indicator
+        if (roomType === 'LONG_TERM' || contractType === 'LONG_TERM') {
+            return <Badge variant="outline" className="border-green-500 text-green-600 font-medium">{t('contracts.roomTypeLongTerm')}</Badge>;
+        }
+        return <Badge variant="outline" className="border-orange-500 text-orange-600 font-medium">{t('contracts.roomTypeShortTerm')}</Badge>;
+    };
 
-    const filteredContracts = buildingFilteredContracts.filter(
-        (contract) =>
-            contract.tenant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            contract.room?.roomCode?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const getRentPriceDisplay = (contract: Contract) => {
+        const type = contract.roomType || (contract.contractType === 'LONG_TERM' ? 'LONG_TERM' : 'SHORT_TERM');
 
-    // Pagination
-    const totalPages = Math.ceil(filteredContracts.length / pageSize);
-    const paginatedContracts = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredContracts.slice(start, start + pageSize);
-    }, [filteredContracts, currentPage, pageSize]);
+        if (type === 'LONG_TERM') {
+            return (
+                <div className="flex flex-col gap-1 text-sm items-end">
+                    <div className="font-medium whitespace-nowrap">
+                        {formatCurrency(contract.rentPrice)}
+                        <span className="text-muted-foreground text-xs font-normal"> / {contract.paymentCycleMonths || 1} {t('rooms.month')}</span>
+                    </div>
+                    {(contract.electricityPrice !== undefined || contract.waterPrice !== undefined) && (
+                        <div className="flex gap-2 text-xs text-muted-foreground">
+                            {contract.electricityPrice !== undefined && (
+                                <span className="flex items-center gap-1" title={t('contracts.electricPrice')}>
+                                    <Zap className="h-3 w-3" />
+                                    {formatCurrency(contract.electricityPrice)}
+                                </span>
+                            )}
+                            {contract.waterPrice !== undefined && (
+                                <span className="flex items-center gap-1" title={t('contracts.waterPrice')}>
+                                    <Droplets className="h-3 w-3" />
+                                    {formatCurrency(contract.waterPrice)}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Short term logic
+        switch (contract.shortTermPricingType) {
+            case 'HOURLY':
+                if (contract.hourlyPricingMode === 'PER_HOUR') {
+                    return `${formatCurrency(contract.pricePerHour)}/h`;
+                }
+                if (contract.hourlyPricingMode === 'TABLE' && contract.shortTermPrices) {
+                    return <PriceTablePopover shortTermPrices={contract.shortTermPrices} pricingType="HOURLY" />;
+                }
+                return t('rooms.tableMode');
+            case 'DAILY':
+                if (contract.shortTermPrices) {
+                    return <PriceTablePopover shortTermPrices={contract.shortTermPrices} pricingType="DAILY" />;
+                }
+                return t('rooms.pricingDaily');
+            case 'FIXED':
+                return formatCurrency(contract.fixedPrice);
+            default:
+                return formatCurrency(contract.rentPrice);
+        }
+    };
+
+    const getPaymentCycleLabel = (contract: Contract) => {
+        const type = contract.roomType || (contract.contractType === 'LONG_TERM' ? 'LONG_TERM' : 'SHORT_TERM');
+        if (type === 'SHORT_TERM') {
+            switch (contract.shortTermPricingType) {
+                case 'HOURLY': return t('rooms.pricingHourly');
+                case 'DAILY': return t('rooms.pricingDaily');
+                case 'FIXED': return t('rooms.pricingFixed');
+                default: return '-';
+            }
+        }
+
+        switch (contract.paymentCycle) {
+            case 'MONTHLY':
+                return t('contracts.cycleMonthly');
+            case 'MONTHLY_2':
+                return t('contracts.cycleMonthly2');
+            case 'QUARTERLY':
+                return t('contracts.cycleQuarterly');
+            case 'MONTHLY_6':
+                return t('contracts.cycleHalfYearly');
+            case 'MONTHLY_12':
+                return t('contracts.cycleYearly');
+            case 'CUSTOM':
+                return `${contract.paymentCycleMonths} ${t('rooms.month')}`;
+            default:
+                return contract.paymentCycle;
+        }
+    };
+
+    const getTotalServices = (contract: Contract) => {
+        if (!contract.serviceCharges || !Array.isArray(contract.serviceCharges)) return 0;
+        return contract.serviceCharges.reduce((sum, service) => sum + (service.amount * (service.quantity || 1)), 0);
+    };
 
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
@@ -149,7 +284,10 @@ export default function ContractsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">{t('contracts.title')}</h1>
                     <p className="text-muted-foreground">{t('contracts.subtitle')}</p>
                 </div>
-                <Button>
+                <Button onClick={() => {
+                    setSelectedContract(null);
+                    setIsCreateOpen(true);
+                }}>
                     <Plus className="mr-2 h-4 w-4" />
                     {t('contracts.add')}
                 </Button>
@@ -176,38 +314,71 @@ export default function ContractsPage() {
                         {t('contracts.list')}
                     </CardTitle>
                     <CardDescription>
-                        {t('contracts.totalCount', { count: filteredContracts.length })}
+                        {t('contracts.totalCount', { count: meta.total })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-                    ) : filteredContracts.length === 0 ? (
+                    ) : contracts.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">{t('contracts.noData')}</div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t('contracts.tenant')}</TableHead>
-                                    <TableHead>{t('contracts.room')}</TableHead>
-                                    <TableHead>{t('contracts.period')}</TableHead>
-                                    <TableHead className="text-right">{t('contracts.monthlyRent')}</TableHead>
-                                    <TableHead className="text-center">{t('common.status')}</TableHead>
-                                    <TableHead className="w-[70px]"></TableHead>
+                                    <TableHead className="w-[120px]">{t('contracts.code')}</TableHead>
+                                    <TableHead className="w-[180px]">{t('contracts.tenant')}</TableHead>
+                                    <TableHead className="w-[150px]">{t('contracts.room')}</TableHead>
+                                    <TableHead className="text-center w-[100px]">{t('contracts.type')}</TableHead>
+                                    <TableHead className="w-[120px]">{t('contracts.period')}</TableHead>
+                                    <TableHead className="text-right w-[150px]">{t('contracts.rentPrice')}</TableHead>
+                                    <TableHead className="text-right w-[120px]">{t('contracts.deposit')}</TableHead>
+                                    <TableHead className="text-right w-[130px]">{t('contracts.totalServiceAmount')}</TableHead>
+                                    <TableHead className="text-center w-[120px]">{t('common.status')}</TableHead>
+                                    <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedContracts.map((contract) => (
+                                {contracts.map((contract) => (
                                     <TableRow key={contract._id}>
-                                        <TableCell className="font-medium">{contract.tenant?.fullName || '-'}</TableCell>
-                                        <TableCell>{contract.room?.roomCode || '-'}</TableCell>
+                                        <TableCell className="font-mono text-xs font-medium">{contract.contractCode || '-'}</TableCell>
                                         <TableCell>
-                                            <div className="flex items-center gap-1 text-sm">
-                                                <Calendar className="h-3 w-3" />
-                                                {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
+                                            <div className="font-medium">{contract.tenantId?.fullName || '-'}</div>
+                                            <div className="text-xs text-muted-foreground">{contract.tenantId?.phone || '-'}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{contract.roomId?.roomName || contract.roomId?.roomCode || '-'}</div>
+                                            <div className="text-xs text-muted-foreground">{contract.roomId?.buildingId?.name || '-'}</div>
+                                        </TableCell>
+                                        <TableCell className="text-center">{getContractTypeBadge(contract.roomType, contract.contractType)}</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1 text-sm">
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {formatDate(contract.startDate)}
+                                                </div>
+                                                <div className="flex items-center gap-1 text-muted-foreground text-xs font-normal">
+                                                    <Calendar className="h-3 w-3 invisible" />
+                                                    {contract.endDate ? formatDate(contract.endDate) : t('contracts.noEndDate')}
+                                                </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right">{formatCurrency(contract.monthlyRent)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex flex-col gap-1 text-sm items-end">
+                                                <div className="font-medium whitespace-nowrap">
+                                                    {getRentPriceDisplay(contract)}
+                                                </div>
+                                                <div className="text-muted-foreground text-xs font-normal">
+                                                    {getPaymentCycleLabel(contract)}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            {formatCurrency(contract.depositAmount)}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {formatCurrency(getTotalServices(contract))}
+                                        </TableCell>
                                         <TableCell className="text-center">{getStatusBadge(contract.status)}</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
@@ -217,14 +388,25 @@ export default function ContractsPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        setSelectedContract(contract);
+                                                        setIsCreateOpen(true);
+                                                    }}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         {t('common.edit')}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(contract)} className="text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        {t('common.delete')}
-                                                    </DropdownMenuItem>
+                                                    {contract.status === 'DRAFT' && (
+                                                        <>
+                                                            <DropdownMenuItem onClick={() => handleActivate(contract)} className="text-blue-600">
+                                                                <Calendar className="mr-2 h-4 w-4" />
+                                                                {t('contracts.activate')}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleDelete(contract)} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                {t('common.delete')}
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -233,12 +415,12 @@ export default function ContractsPage() {
                             </TableBody>
                         </Table>
                     )}
-                    {filteredContracts.length > 0 && (
+                    {meta.total > 0 && (
                         <Pagination
                             currentPage={currentPage}
-                            totalPages={totalPages}
+                            totalPages={meta.totalPages}
                             pageSize={pageSize}
-                            totalItems={filteredContracts.length}
+                            totalItems={meta.total}
                             onPageChange={setCurrentPage}
                             onPageSizeChange={(size) => {
                                 setPageSize(size);
@@ -254,7 +436,11 @@ export default function ContractsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('contracts.deleteTitle')}</DialogTitle>
-                        <DialogDescription>{t('contracts.deleteConfirm')}</DialogDescription>
+                        <DialogDescription>
+                            {selectedContract?.status === 'DRAFT'
+                                ? t('contracts.deleteDraftConfirm')
+                                : t('contracts.deleteConfirm')}
+                        </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
@@ -270,6 +456,25 @@ export default function ContractsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ContractForm
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                contract={selectedContract && isCreateOpen ? selectedContract : undefined}
+            />
+
+            {selectedContract && (
+                <ActivateContractDialog
+                    isOpen={isActivateOpen}
+                    onClose={() => setIsActivateOpen(false)}
+                    initialData={{
+                        startDate: selectedContract.startDate,
+                        endDate: selectedContract.endDate,
+                    }}
+                    onConfirm={(data) => activateMutation.mutate({ id: selectedContract._id, data })}
+                    isSubmitting={activateMutation.isPending}
+                />
+            )}
         </div>
     );
 }

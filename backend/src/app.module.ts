@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import { I18nModule, AcceptLanguageResolver, QueryResolver, HeaderResolver } from 'nestjs-i18n';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, HttpAdapterHost } from '@nestjs/core';
 import * as winston from 'winston';
 import * as path from 'path';
 import { DatabaseConfig } from './config/database.config';
@@ -17,7 +17,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { RoomGroupsModule } from './modules/room-groups/room-groups.module';
 import { ServicesModule } from './modules/services/services.module';
-import { I18nValidationExceptionFilter } from './common/filters/i18n-validation.filter';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 @Module({
@@ -90,7 +90,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     providers: [
         {
             provide: APP_FILTER,
-            useClass: I18nValidationExceptionFilter,
+            useClass: AllExceptionsFilter,
         },
         {
             provide: APP_INTERCEPTOR,

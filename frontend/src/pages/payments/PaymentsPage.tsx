@@ -264,7 +264,11 @@ export default function PaymentsPage() {
 
             {/* Delete Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('payments.deleteTitle')}</DialogTitle>
                         <DialogDescription>{t('payments.deleteConfirm')}</DialogDescription>

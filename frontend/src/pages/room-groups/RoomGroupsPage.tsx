@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Layers, Search } from 'lucide-react';
@@ -28,6 +28,7 @@ import apiClient from '@/api/client';
 import Pagination from '@/components/Pagination';
 import RoomGroupForm, { RoomGroupFormData } from '@/components/forms/RoomGroupForm';
 import { useBuildingStore } from '@/stores/buildingStore';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface RoomGroup {
     _id: string;
@@ -41,12 +42,9 @@ interface RoomGroup {
 }
 
 const roomGroupsApi = {
-    getAll: async (buildingId?: string | null): Promise<RoomGroup[]> => {
-        const params = buildingId ? `?buildingId=${buildingId}` : '';
-        const response = await apiClient.get(`/room-groups${params}`);
-        // API may return { data: [...], meta: {...} } or direct array
-        return Array.isArray(response.data?.data) ? response.data.data :
-            Array.isArray(response.data) ? response.data : [];
+    getAll: async (params: { page: number; limit: number; search?: string; buildingId?: string | null }) => {
+        const response = await apiClient.get('/room-groups', { params });
+        return response.data;
     },
     create: async (data: RoomGroupFormData) => {
         // Clean up empty strings for optional fields
@@ -81,6 +79,7 @@ export default function RoomGroupsPage() {
     const queryClient = useQueryClient();
     const { selectedBuildingId } = useBuildingStore();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -88,10 +87,18 @@ export default function RoomGroupsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { data: roomGroups = [], isLoading } = useQuery({
-        queryKey: ['room-groups', selectedBuildingId],
-        queryFn: () => roomGroupsApi.getAll(selectedBuildingId),
+    const { data: roomGroupsData, isLoading } = useQuery({
+        queryKey: ['room-groups', { buildingId: selectedBuildingId, page: currentPage, limit: pageSize, search: debouncedSearchTerm }],
+        queryFn: () => roomGroupsApi.getAll({
+            buildingId: selectedBuildingId || undefined,
+            page: currentPage,
+            limit: pageSize,
+            search: debouncedSearchTerm
+        }),
     });
+
+    const roomGroups: RoomGroup[] = Array.isArray(roomGroupsData?.data) ? roomGroupsData.data : [];
+    const meta = roomGroupsData?.meta || { total: 0, totalPages: 0 };
 
     const createMutation = useMutation({
         mutationFn: (data: RoomGroupFormData) => roomGroupsApi.create(data),
@@ -156,19 +163,6 @@ export default function RoomGroupsPage() {
         return colorClasses[color] || 'bg-gray-500';
     };
 
-    const filteredGroups = roomGroups.filter(
-        (group) =>
-            group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            group.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Pagination
-    const totalPages = Math.ceil(filteredGroups.length / pageSize);
-    const paginatedGroups = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredGroups.slice(start, start + pageSize);
-    }, [filteredGroups, currentPage, pageSize]);
-
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
         setCurrentPage(1);
@@ -189,7 +183,11 @@ export default function RoomGroupsPage() {
                             {t('roomGroups.add')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={(e) => e.preventDefault()}
+                    >
+
                         <DialogHeader>
                             <DialogTitle>{t('roomGroups.addTitle')}</DialogTitle>
                             <DialogDescription>{t('roomGroups.addDescription')}</DialogDescription>
@@ -225,13 +223,13 @@ export default function RoomGroupsPage() {
                         {t('roomGroups.list')}
                     </CardTitle>
                     <CardDescription>
-                        {t('roomGroups.totalCount', { count: filteredGroups.length })}
+                        {t('roomGroups.totalCount', { count: meta.total })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-                    ) : filteredGroups.length === 0 ? (
+                    ) : roomGroups.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">{t('roomGroups.noData')}</div>
                     ) : (
                         <Table>
@@ -246,7 +244,7 @@ export default function RoomGroupsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedGroups.map((group) => (
+                                {roomGroups.map((group) => (
                                     <TableRow key={group._id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -279,12 +277,12 @@ export default function RoomGroupsPage() {
                             </TableBody>
                         </Table>
                     )}
-                    {filteredGroups.length > 0 && (
+                    {meta.total > 0 && (
                         <Pagination
                             currentPage={currentPage}
-                            totalPages={totalPages}
+                            totalPages={meta.totalPages}
                             pageSize={pageSize}
-                            totalItems={filteredGroups.length}
+                            totalItems={meta.total}
                             onPageChange={setCurrentPage}
                             onPageSizeChange={(size) => {
                                 setPageSize(size);
@@ -297,7 +295,11 @@ export default function RoomGroupsPage() {
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('roomGroups.editTitle')}</DialogTitle>
                         <DialogDescription>{t('roomGroups.editDescription')}</DialogDescription>
@@ -325,7 +327,11 @@ export default function RoomGroupsPage() {
 
             {/* Delete Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('roomGroups.deleteTitle')}</DialogTitle>
                         <DialogDescription>

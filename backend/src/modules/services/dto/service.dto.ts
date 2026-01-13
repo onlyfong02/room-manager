@@ -1,15 +1,29 @@
-import { IsNotEmpty, IsString, IsOptional, IsNumber, IsEnum, IsArray, IsBoolean, ValidateNested, IsMongoId } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsNumber, IsEnum, IsArray, IsBoolean, ValidateNested, IsMongoId, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PaginationDto } from '@common/dto/pagination.dto';
 
 class ServicePriceTierDto {
     @IsNumber()
+    @Min(0)
     fromValue: number;
 
     @IsNumber()
+    @Min(-1)
     toValue: number;
 
     @IsNumber()
+    @Min(0)
     price: number;
+}
+
+export class GetServicesDto extends PaginationDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsMongoId()
+    buildingId?: string;
 }
 
 export class CreateServiceDto {

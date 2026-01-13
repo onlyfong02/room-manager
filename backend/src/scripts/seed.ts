@@ -5,9 +5,13 @@ import { BuildingsService } from '../modules/buildings/buildings.service';
 import { RoomsService } from '../modules/rooms/rooms.service';
 import { RoomGroupsService } from '../modules/room-groups/room-groups.service';
 import { TenantsService } from '../modules/tenants/tenants.service';
+import { ServicesService } from '../modules/services/services.service';
 import { RoomType, ShortTermPricingType, RoomStatus } from '../common/constants/enums';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { faker } from '@faker-js/faker/locale/en';
+
+const f = faker as any;
 
 async function bootstrap() {
     const app = await NestFactory.createApplicationContext(AppModule);
@@ -24,9 +28,9 @@ async function bootstrap() {
         const roomsService = app.get(RoomsService);
         const roomGroupsService = app.get(RoomGroupsService);
         const tenantsService = app.get(TenantsService);
+        const servicesService = app.get(ServicesService);
 
-        // 1. Create User
-        console.log('Seeding user...');
+        // 1. Create Admin User
         const user = await usersService.create({
             email: 'admin@example.com',
             password: 'password123',
@@ -34,177 +38,128 @@ async function bootstrap() {
             phone: '0901234567',
         });
         const ownerId = user._id.toString();
-        console.log('User seeded:', user.email);
 
         // 2. Create Buildings
-        console.log('Seeding buildings...');
-        const buildingA = await buildingsService.create(ownerId, {
-            name: 'Skyline Tower',
-            address: {
-                street: '123 Le Loi',
-                ward: 'Ben Nghe',
-                district: 'District 1',
-                city: 'Ho Chi Minh',
-            },
-            description: 'Luxury apartments'
-        });
+        const buildings = [];
+        for (let i = 0; i < 10; i++) {
+            const building = await buildingsService.create(ownerId, {
+                // Safe fallback if street() is missing, verify property access
+                name: `Tòa nhà ${f.location?.street ? f.location.street() : f.address?.street() || 'Building ' + i}`,
+                address: {
+                    street: f.location?.streetAddress ? f.location.streetAddress() : f.address?.streetAddress() || '123 Street',
+                    ward: f.location?.state ? f.location.state() : f.address?.state() || 'Ward 1',
+                    district: f.location?.county ? f.location.county() : f.address?.county() || 'District 1',
+                    city: 'Hồ Chí Minh',
+                },
+                description: f.lorem.sentence()
+            });
+            buildings.push(building);
+        }
+        console.log(`${buildings.length} buildings seeded.`);
 
-        const buildingB = await buildingsService.create(ownerId, {
-            name: 'Sunset Villa',
-            address: {
-                street: '456 Nguyen Hue',
-                ward: 'Ben Nghe',
-                district: 'District 1',
-                city: 'Ho Chi Minh',
-            },
-            description: 'Quiet villa'
-        });
+        // 3. Create Services
+        const serviceTypes = [
+            { name: 'Điện', unit: 'kWh', price: 3500 },
+            { name: 'Nước', unit: 'm3', price: 15000 },
+            { name: 'Internet', unit: 'tháng', price: 100000 },
+            { name: 'Vệ sinh', unit: 'tháng', price: 50000 },
+        ];
 
-        console.log('Buildings seeded:', buildingA.name, buildingB.name);
+        const services = [];
+        for (let i = 0; i < 20; i++) {
+            const type = f.helpers.arrayElement(serviceTypes);
+            const isFixed = Math.random() > 0.3;
+            const price = parseFloat(f.commerce.price({ min: 10000, max: 200000 }));
 
-        // 3. Create Room Groups
-        console.log('Seeding room groups...');
-        const groupVIP = await roomGroupsService.create(ownerId, {
-            buildingId: (buildingA as any)._id.toString(),
-            name: 'VIP Rooms',
-            description: 'Luxury rooms with city view',
-            color: '#FFD700',
-            sortOrder: 1,
-            isActive: true
-        });
+            const service = await servicesService.create(ownerId, {
+                name: `${type.name} ${(f.location?.street ? f.location.street() : 'Service ' + i)}`,
+                unit: type.unit,
+                priceType: isFixed ? 'FIXED' : 'TABLE',
+                fixedPrice: isFixed ? price : undefined,
+                priceTiers: !isFixed ? [
+                    { fromValue: 0, toValue: 10, price: price },
+                    { fromValue: 11, toValue: -1, price: price * 1.5 }
+                ] : undefined,
+                buildingScope: 'ALL',
+                isActive: true
+            });
+            services.push(service);
+        }
 
-        const groupStandard = await roomGroupsService.create(ownerId, {
-            buildingId: (buildingA as any)._id.toString(),
-            name: 'Standard Rooms',
-            description: 'Affordable rooms',
-            color: '#C0C0C0',
-            sortOrder: 2,
-            isActive: true
-        });
-        console.log('Room groups seeded:', groupVIP.name, groupStandard.name);
+        // 4. Rooms & Groups
+        console.log('Seeding room groups and rooms...');
+        const allRooms = [];
+        for (const building of buildings) {
+            try {
+                const groupCount = f.number.int({ min: 3, max: 5 });
+                for (let g = 0; g < groupCount; g++) {
+                    const group = await roomGroupsService.create(ownerId, {
+                        buildingId: (building as any)._id.toString(),
+                        name: `Group ${f.commerce.productAdjective()}`,
+                        description: f.lorem.sentence(),
+                        color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
+                        sortOrder: g,
+                        isActive: true
+                    });
 
-        // 4. Create Rooms
-        console.log('Seeding rooms...');
+                    const roomCount = f.number.int({ min: 10, max: 15 });
+                    for (let r = 0; r < roomCount; r++) {
+                        const roomType = f.helpers.arrayElement([RoomType.LONG_TERM, RoomType.SHORT_TERM]);
 
-        // Building A - Long Term Room
-        await roomsService.create(ownerId, {
-            buildingId: (buildingA as any)._id,
-            roomGroupId: (groupStandard as any)._id,
-            roomName: 'A101',
-            floor: 1,
-            roomType: RoomType.LONG_TERM,
-            status: RoomStatus.AVAILABLE,
-            area: 25,
-            defaultRoomPrice: 5000000,
-            defaultElectricPrice: 3500,
-            defaultWaterPrice: 20000,
-            defaultTermMonths: 6,
-            maxOccupancy: 2,
-            amenities: ['AC', 'Wifi', 'Kitchen'],
-            description: 'Cozy room for students'
-        });
+                        const roomName = `${building.name.substring(0, 1).toUpperCase()}-${g + 1}0${r + 1}`;
 
-        // Building A - Short Term Room (Hourly - Table)
-        await roomsService.create(ownerId, {
-            buildingId: (buildingA as any)._id,
-            roomGroupId: (groupVIP as any)._id,
-            roomName: 'A201',
-            floor: 2,
-            roomType: RoomType.SHORT_TERM,
-            status: RoomStatus.AVAILABLE,
-            area: 30,
-            shortTermPricingType: ShortTermPricingType.HOURLY,
-            hourlyPricingMode: 'TABLE',
-            shortTermPrices: [
-                { fromValue: 0, toValue: 2, price: 100000 },
-                { fromValue: 2, toValue: -1, price: 50000 }, // Additional hours
-            ],
-            maxOccupancy: 2,
-            description: 'VIP hourly room'
-        });
+                        // Debug log 
+                        // console.log(`Creating room ${roomName}`);
 
-        // Building B - Short Term Room (Daily)
-        await roomsService.create(ownerId, {
-            buildingId: (buildingB as any)._id,
-            roomName: 'B101',
-            floor: 1,
-            roomType: RoomType.SHORT_TERM,
-            status: RoomStatus.AVAILABLE,
-            area: 35,
-            shortTermPricingType: ShortTermPricingType.DAILY,
-            shortTermPrices: [
-                { fromValue: 0, toValue: 1, price: 500000 },
-                { fromValue: 1, toValue: -1, price: 450000 }
-            ],
-            maxOccupancy: 4,
-            amenities: ['TV', 'Fridge']
-        });
+                        const roomData: any = {
+                            buildingId: (building as any)._id.toString(),
+                            roomGroupId: (group as any)._id.toString(),
+                            roomName: roomName,
+                            floor: g + 1,
+                            roomType: roomType,
+                            status: f.helpers.arrayElement([RoomStatus.AVAILABLE, RoomStatus.OCCUPIED, RoomStatus.MAINTENANCE]),
+                            area: f.number.int({ min: 20, max: 60 }),
+                            maxOccupancy: f.number.int({ min: 2, max: 6 }),
+                            amenities: f.helpers.arrayElements(['AC', 'Wifi'], 2), // Fixed count argument
+                            description: f.lorem.sentence()
+                        };
 
-        console.log('Rooms seeded successfully!');
+                        if (roomType === RoomType.LONG_TERM) {
+                            roomData.defaultRoomPrice = parseFloat(f.commerce.price({ min: 3000000, max: 8000000 }));
+                            roomData.defaultElectricPrice = 3500;
+                            roomData.defaultWaterPrice = 20000;
+                            roomData.defaultTermMonths = 6;
+                        } else {
+                            roomData.shortTermPricingType = ShortTermPricingType.FIXED;
+                            roomData.fixedPrice = parseFloat(f.commerce.price({ min: 200000, max: 1000000 }));
+                        }
 
-        // 5. Create Tenants
-        console.log('Seeding tenants...');
-
-        await tenantsService.create(ownerId, {
-            fullName: 'Nguyen Van An',
-            idCard: '012345678901',
-            phone: '0909123456',
-            email: 'nguyenvanan@gmail.com',
-            permanentAddress: '123 Tran Hung Dao, Q1, TP.HCM',
-            occupation: 'Nhân viên văn phòng',
-            emergencyContact: {
-                name: 'Nguyen Thi Hoa',
-                phone: '0909111222',
-                relationship: 'Mẹ'
+                        const room = await roomsService.create(ownerId, roomData);
+                        allRooms.push(room);
+                    }
+                }
+            } catch (err: any) {
+                console.error(`Error in building ${building.name}:`, err.message);
+                // console.error(err); 
             }
-        });
+        }
+        console.log(`${allRooms.length} rooms seeded.`);
 
-        await tenantsService.create(ownerId, {
-            fullName: 'Tran Thi Bich',
-            idCard: '098765432109',
-            phone: '0987654321',
-            email: 'tranthibich@gmail.com',
-            permanentAddress: '456 Le Van Sy, Q3, TP.HCM',
-            occupation: 'Sinh viên',
-            emergencyContact: {
-                name: 'Tran Van Binh',
-                phone: '0909333444',
-                relationship: 'Bố'
-            }
-        });
-
-        await tenantsService.create(ownerId, {
-            fullName: 'Le Hoang Cuong',
-            idCard: '111222333444',
-            phone: '0912345678',
-            email: 'lehoangcuong@gmail.com',
-            permanentAddress: '789 Nguyen Trai, Q5, TP.HCM',
-            occupation: 'Kỹ sư phần mềm'
-        });
-
-        await tenantsService.create(ownerId, {
-            fullName: 'Pham Minh Duc',
-            idCard: '555666777888',
-            phone: '0923456789',
-            email: 'phamminhduc@gmail.com',
-            permanentAddress: '321 Hai Ba Trung, Q1, TP.HCM',
-            occupation: 'Giáo viên',
-            emergencyContact: {
-                name: 'Pham Thi Lan',
-                phone: '0909555666',
-                relationship: 'Vợ'
-            }
-        });
-
-        await tenantsService.create(ownerId, {
-            fullName: 'Hoang Thi Em',
-            idCard: '999888777666',
-            phone: '0934567890',
-            permanentAddress: '654 Vo Van Tan, Q3, TP.HCM',
-            occupation: 'Y tá'
-        });
-
-        console.log('Tenants seeded successfully!');
+        // 5. Tenants
+        const tenants = [];
+        for (let i = 0; i < 150; i++) {
+            const tenant = await tenantsService.create(ownerId, {
+                fullName: f.person.fullName(),
+                idCard: f.string.numeric(12),
+                phone: f.phone.number(),
+                email: f.internet.email(),
+                permanentAddress: f.location?.streetAddress ? f.location.streetAddress() : 'Address',
+                occupation: f.person.jobTitle()
+            });
+            tenants.push(tenant);
+        }
+        console.log(`${tenants.length} tenants seeded.`);
+        console.log('Seeding completed successfully!');
 
     } catch (error) {
         console.error('Seeding failed:', error);
@@ -215,4 +170,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

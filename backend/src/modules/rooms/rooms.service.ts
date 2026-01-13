@@ -3,7 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Room, RoomDocument } from './schemas/room.schema';
 import { Building, BuildingDocument } from '../buildings/schemas/building.schema';
-import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto } from './dto/room.dto';
+import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from './dto/room.dto';
+import { normalizeString } from '@common/utils/string.util';
 
 @Injectable()
 export class RoomsService {
@@ -37,6 +38,7 @@ export class RoomsService {
 
         const room = new this.roomModel({
             ...createRoomDto,
+            nameNormalized: normalizeString(createRoomDto.roomName),
             ownerId: new Types.ObjectId(ownerId),
             buildingId: new Types.ObjectId(createRoomDto.buildingId),
             roomGroupId: createRoomDto.roomGroupId ? new Types.ObjectId(createRoomDto.roomGroupId) : undefined,
@@ -58,10 +60,64 @@ export class RoomsService {
         return savedRoom;
     }
 
-    async findAll(ownerId: string, buildingId?: string): Promise<Room[]> {
+    async findAll(ownerId: string, query: GetRoomsDto | string): Promise<any> {
+        // Support backward compatibility or direct buildingId usage if needed, though DTO is preferred
         const filter: any = { ownerId: new Types.ObjectId(ownerId), isDeleted: false };
-        if (buildingId) filter.buildingId = new Types.ObjectId(buildingId);
-        return this.roomModel.find(filter).populate('buildingId roomGroupId').sort({ createdAt: -1 }).exec();
+
+        // Handle if query is just a string (buildingId) - legacy support if any
+        if (typeof query === 'string') {
+            if (query) filter.buildingId = new Types.ObjectId(query);
+            return this.roomModel.find(filter).populate('buildingId roomGroupId').sort({ createdAt: -1 }).exec();
+        }
+
+        const { buildingId, search, status, page = 1, limit = 10 } = query;
+
+        if (buildingId) {
+            filter.buildingId = new Types.ObjectId(buildingId);
+        }
+
+        if (status) {
+            filter.status = status;
+        }
+
+        if (search) {
+            const normalizedSearch = normalizeString(search);
+            if (normalizedSearch) {
+                const searchRegex = new RegExp(normalizedSearch, 'i');
+                filter.$or = [
+                    { nameNormalized: searchRegex },
+                    { roomCode: new RegExp(search, 'i') },
+                    { roomName: new RegExp(search, 'i') }
+                ];
+            } else {
+                filter.$or = [
+                    { roomName: { $regex: search, $options: 'i' } },
+                    { roomCode: { $regex: search, $options: 'i' } }
+                ];
+            }
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await Promise.all([
+            this.roomModel.find(filter)
+                .populate('buildingId roomGroupId')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.roomModel.countDocuments(filter).exec()
+        ]);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     }
 
     async findOne(id: string, ownerId: string): Promise<Room> {
@@ -91,14 +147,14 @@ export class RoomsService {
         }
 
         // Convert roomGroupId to ObjectId if present
-        if (dto.roomGroupId) {
-            dto.roomGroupId = new Types.ObjectId(dto.roomGroupId);
+        if (dto.roomName) {
+            (dto as any).nameNormalized = normalizeString(dto.roomName);
         }
 
         const room = await this.roomModel
             .findOneAndUpdate(
                 { _id: id, ownerId: new Types.ObjectId(ownerId), isDeleted: false },
-                { $set: updateRoomDto },
+                { $set: dto },
                 { new: true }
             )
             .exec();
@@ -139,5 +195,11 @@ export class RoomsService {
             building.totalRooms -= 1;
             await building.save();
         }
+    }
+    async updateStatus(id: string, ownerId: string, status: string): Promise<void> {
+        await this.roomModel.updateOne(
+            { _id: id, ownerId: new Types.ObjectId(ownerId) },
+            { $set: { status } }
+        ).exec();
     }
 }

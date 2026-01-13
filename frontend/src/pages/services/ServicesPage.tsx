@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Wrench, Search } from 'lucide-react';
@@ -23,16 +23,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
 import apiClient from '@/api/client';
 import Pagination from '@/components/Pagination';
 import ServiceForm, { ServiceFormData } from '@/components/forms/ServiceForm';
 import { PriceTablePopover } from '@/components/PriceTablePopover';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PriceTier {
     fromValue: number;
@@ -55,10 +51,9 @@ interface Service {
 }
 
 const servicesApi = {
-    getAll: async (): Promise<Service[]> => {
-        const response = await apiClient.get('/services');
-        return Array.isArray(response.data?.data) ? response.data.data :
-            Array.isArray(response.data) ? response.data : [];
+    getAll: async (params: { page: number; limit: number; search?: string }) => {
+        const response = await apiClient.get('/services', { params });
+        return response.data;
     },
     create: async (data: ServiceFormData) => {
         const response = await apiClient.post('/services', data);
@@ -78,6 +73,7 @@ export default function ServicesPage() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -85,10 +81,17 @@ export default function ServicesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { data: services = [], isLoading } = useQuery({
-        queryKey: ['services'],
-        queryFn: servicesApi.getAll,
+    const { data: servicesData, isLoading } = useQuery({
+        queryKey: ['services', { page: currentPage, limit: pageSize, search: debouncedSearchTerm }],
+        queryFn: () => servicesApi.getAll({
+            page: currentPage,
+            limit: pageSize,
+            search: debouncedSearchTerm
+        }),
     });
+
+    const services: Service[] = Array.isArray(servicesData?.data) ? servicesData.data : [];
+    const meta = servicesData?.meta || { total: 0, totalPages: 0 };
 
     const createMutation = useMutation({
         mutationFn: (data: ServiceFormData) => servicesApi.create(data),
@@ -143,35 +146,27 @@ export default function ServicesPage() {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
 
-    const filteredServices = services.filter(
-        (service) =>
-            service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            service.code.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Pagination
-    const totalPages = Math.ceil(filteredServices.length / pageSize);
-    const paginatedServices = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredServices.slice(start, start + pageSize);
-    }, [filteredServices, currentPage, pageSize]);
-
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
         setCurrentPage(1);
     };
 
+    interface Building {
+        _id: string;
+        name: string;
+    }
+
     const { data: buildings = [] } = useQuery({
         queryKey: ['buildings'],
         queryFn: async () => {
             const res = await apiClient.get('/buildings');
-            return res.data.data || [];
+            return (res.data.data || []) as Building[];
         }
     });
 
     const getBuildingName = (idOrObj: string | { _id: string; name: string }) => {
         if (typeof idOrObj !== 'string') return idOrObj.name;
-        return buildings.find((b: any) => b._id === idOrObj)?.name || '...';
+        return buildings.find((b: Building) => b._id === idOrObj)?.name || '...';
     };
 
     return (
@@ -189,7 +184,12 @@ export default function ServicesPage() {
                             {t('services.add')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent
+                        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={(e) => e.preventDefault()}
+                    >
+
                         <DialogHeader>
                             <DialogTitle>{t('services.addTitle')}</DialogTitle>
                             <DialogDescription>{t('services.addDescription')}</DialogDescription>
@@ -224,13 +224,13 @@ export default function ServicesPage() {
                         {t('services.list')}
                     </CardTitle>
                     <CardDescription>
-                        {t('services.totalCount', { count: filteredServices.length })}
+                        {t('services.totalCount', { count: meta.total })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-                    ) : filteredServices.length === 0 ? (
+                    ) : services.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">{t('services.noData')}</div>
                     ) : (
                         <Table>
@@ -246,7 +246,7 @@ export default function ServicesPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedServices.map((service) => (
+                                {services.map((service: Service) => (
                                     <TableRow key={service._id}>
                                         <TableCell className="font-medium">{service.name}</TableCell>
                                         <TableCell className="font-mono text-sm">{service.code}</TableCell>
@@ -268,7 +268,7 @@ export default function ServicesPage() {
                                                 <div className="flex flex-wrap gap-1">
                                                     {service.buildingIds?.length > 0 ? (
                                                         <>
-                                                            {service.buildingIds.slice(0, 3).map((b, idx) => (
+                                                            {service.buildingIds.slice(0, 3).map((b) => (
                                                                 <Badge key={typeof b === 'string' ? b : b._id} variant="outline" className="font-normal">
                                                                     {getBuildingName(b)}
                                                                 </Badge>
@@ -305,12 +305,12 @@ export default function ServicesPage() {
                             </TableBody>
                         </Table>
                     )}
-                    {filteredServices.length > 0 && (
+                    {meta.total > 0 && (
                         <Pagination
                             currentPage={currentPage}
-                            totalPages={totalPages}
+                            totalPages={meta.totalPages}
                             pageSize={pageSize}
-                            totalItems={filteredServices.length}
+                            totalItems={meta.total}
                             onPageChange={setCurrentPage}
                             onPageSizeChange={(size) => {
                                 setPageSize(size);
@@ -323,7 +323,12 @@ export default function ServicesPage() {
 
             {/* Edit Dialog */}
             < Dialog open={isEditOpen} onOpenChange={setIsEditOpen} >
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent
+                    className="max-w-2xl max-h-[90vh] overflow-y-auto"
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('services.editTitle')}</DialogTitle>
                         <DialogDescription>{t('services.editDescription')}</DialogDescription>
@@ -344,7 +349,7 @@ export default function ServicesPage() {
                                 ) || [],
                                 isActive: selectedService.isActive,
                             }}
-                            onSubmit={(data) =>
+                            onSubmit={(data: ServiceFormData) =>
                                 updateMutation.mutate({ id: selectedService._id, data })
                             }
                             onCancel={() => setIsEditOpen(false)}
@@ -356,7 +361,11 @@ export default function ServicesPage() {
 
             {/* Delete Dialog */}
             < Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen} >
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('services.deleteTitle')}</DialogTitle>
                         <DialogDescription>

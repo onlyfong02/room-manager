@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTenantSchema } from '@/lib/validations';
 
@@ -41,6 +42,7 @@ export default function TenantForm({
             gender: undefined,
             address: '',
             occupation: '',
+            status: 'ACTIVE',
             ...defaultValues,
         },
     });
@@ -141,6 +143,39 @@ export default function TenantForm({
                     <Input id="occupation" {...register('occupation')} />
                 </div>
 
+                <div className="space-y-2">
+                    <Label htmlFor="status">{t('common.status')}</Label>
+                    <select
+                        id="status"
+                        {...register('status')}
+                        defaultValue={defaultValues?.status || 'ACTIVE'}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:bg-muted disabled:opacity-50"
+                        disabled={defaultValues?.status === 'RENTING' || defaultValues?.status === 'DEPOSITED'}
+                    >
+                        <option value="ACTIVE">{t('tenants.statusActive')}</option>
+                        <option value="CLOSED">{t('tenants.statusClosed')}</option>
+                        {defaultValues?.status === 'RENTING' && (
+                            <option value="RENTING">{t('tenants.statusRenting')}</option>
+                        )}
+                        {defaultValues?.status === 'DEPOSITED' && (
+                            <option value="DEPOSITED">{t('tenants.statusDeposited')}</option>
+                        )}
+                    </select>
+                    {(defaultValues?.status === 'RENTING' || defaultValues?.status === 'DEPOSITED') && (
+                        <div className="flex flex-col gap-1 mt-1">
+                            <Badge
+                                variant={defaultValues.status === 'RENTING' ? 'default' : 'secondary'}
+                                className={`w-fit ${defaultValues.status === 'DEPOSITED' ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                            >
+                                {defaultValues.status === 'RENTING' ? t('tenants.statusRenting') : t('tenants.statusDeposited')}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground italic">
+                                * {t('tenants.statusRentAutoHint')}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
                 <div className="border-t pt-4 mt-4">
                     <h3 className="font-medium mb-4">{t('tenants.emergencyContact')}</h3>
                     <div className="space-y-4">
@@ -170,6 +205,6 @@ export default function TenantForm({
                     {t('common.save')}
                 </Button>
             </DialogFooter>
-        </form>
+        </form >
     );
 }

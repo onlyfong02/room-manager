@@ -7,11 +7,14 @@ export enum RoomStatus {
     AVAILABLE = 'AVAILABLE',
     OCCUPIED = 'OCCUPIED',
     MAINTENANCE = 'MAINTENANCE',
+    DEPOSITED = 'DEPOSITED',
 }
 
 export enum TenantStatus {
+    RENTING = 'RENTING',
     ACTIVE = 'ACTIVE',
-    MOVED_OUT = 'MOVED_OUT',
+    CLOSED = 'CLOSED',
+    DEPOSITED = 'DEPOSITED',
 }
 
 export enum Gender {
@@ -22,11 +25,13 @@ export enum Gender {
 
 export enum ContractType {
     LONG_TERM = 'LONG_TERM',
-    DAILY = 'DAILY',
-    MONTHLY = 'MONTHLY',
+    SHORT_TERM = 'SHORT_TERM',
+    DAILY = 'DAILY', // Optional: keep for legacy or specific granularity
+    MONTHLY = 'MONTHLY', // Optional: keep for legacy
 }
 
 export enum ContractStatus {
+    DRAFT = 'DRAFT',
     ACTIVE = 'ACTIVE',
     EXPIRED = 'EXPIRED',
     TERMINATED = 'TERMINATED',
@@ -34,8 +39,11 @@ export enum ContractStatus {
 
 export enum PaymentCycle {
     MONTHLY = 'MONTHLY',
+    MONTHLY_2 = 'MONTHLY_2',
     QUARTERLY = 'QUARTERLY',
-    DAILY = 'DAILY',
+    MONTHLY_6 = 'MONTHLY_6',
+    MONTHLY_12 = 'MONTHLY_12',
+    CUSTOM = 'CUSTOM',
 }
 
 export enum InvoiceStatus {

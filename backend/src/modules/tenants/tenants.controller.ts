@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { TenantsService } from './tenants.service';
-import { CreateTenantDto, UpdateTenantDto } from './dto/tenant.dto';
+import { CreateTenantDto, UpdateTenantDto, GetTenantsDto } from './dto/tenant.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -15,8 +15,8 @@ export class TenantsController {
     }
 
     @Get()
-    findAll(@CurrentUser() user: any) {
-        return this.tenantsService.findAll(user.userId);
+    findAll(@CurrentUser() user: any, @Query() query: GetTenantsDto) {
+        return this.tenantsService.findAll(user.userId, query);
     }
 
     @Get(':id')

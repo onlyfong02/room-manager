@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -12,56 +12,16 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { NumberInput } from '@/components/ui/number-input';
 import apiClient from '@/api/client';
 
-const priceTierSchema = z.object({
-    fromValue: z.number().min(0),
-    toValue: z.number(),
-    price: z.number().min(0, 'Giá phải lớn hơn hoặc bằng 0'),
-});
-
-const serviceSchema = z.object({
-    name: z.string().min(1, 'Tên dịch vụ là bắt buộc'),
-    unit: z.string().min(1, 'Đơn vị tính là bắt buộc'),
-    priceType: z.enum(['FIXED', 'TABLE']),
-    fixedPrice: z.number().min(0, 'Giá phải lớn hơn hoặc bằng 0').optional(),
-    priceTiers: z.array(priceTierSchema).optional(),
-    buildingScope: z.enum(['ALL', 'SPECIFIC']),
-    buildingIds: z.array(z.string()).optional(),
-    isActive: z.boolean().optional(),
-}).superRefine((data, ctx) => {
-    // If FIXED, require fixedPrice >= 0
-    if (data.priceType === 'FIXED') {
-        if (data.fixedPrice === undefined || data.fixedPrice < 0) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: 'Giá là bắt buộc',
-                path: ['fixedPrice'],
-            });
-        }
-    }
-    // If TABLE, require prices >= 0
-    if (data.priceType === 'TABLE') {
-        if (!data.priceTiers || data.priceTiers.length === 0) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: 'Phải có ít nhất một mức giá',
-                path: ['priceTiers'],
-            });
-        } else {
-            // Check each tier price >= 0
-            data.priceTiers.forEach((tier, index) => {
-                if (tier.price < 0) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: 'Giá phải lớn hơn hoặc bằng 0',
-                        path: ['priceTiers', index, 'price'],
-                    });
-                }
-            });
-        }
-    }
-});
-
-export type ServiceFormData = z.infer<typeof serviceSchema>;
+export type ServiceFormData = {
+    name: string;
+    unit: string;
+    priceType: 'FIXED' | 'TABLE';
+    fixedPrice?: number;
+    priceTiers?: { fromValue: number; toValue: number; price: number }[];
+    buildingScope: 'ALL' | 'SPECIFIC';
+    buildingIds?: string[];
+    isActive?: boolean;
+};
 
 interface ServiceFormProps {
     defaultValues?: Partial<ServiceFormData>;
@@ -85,6 +45,57 @@ export default function ServiceForm({
     isSubmitting = false,
 }: ServiceFormProps) {
     const { t } = useTranslation();
+
+    const serviceSchema = useMemo(() => {
+        const priceTierSchema = z.object({
+            fromValue: z.number().min(0),
+            toValue: z.number(),
+            price: z.number().min(0, t('validation.min', { field: t('services.price'), min: 0 })),
+        });
+
+        return z.object({
+            name: z.string().min(1, t('validation.required', { field: t('services.name') })),
+            unit: z.string().min(1, t('validation.required', { field: t('services.unit') })),
+            priceType: z.enum(['FIXED', 'TABLE']),
+            fixedPrice: z.number().min(0, t('validation.min', { field: t('services.price'), min: 0 })).optional(),
+            priceTiers: z.array(priceTierSchema).optional(),
+            buildingScope: z.enum(['ALL', 'SPECIFIC']),
+            buildingIds: z.array(z.string()).optional(),
+            isActive: z.boolean().optional(),
+        }).superRefine((data, ctx) => {
+            // If FIXED, require fixedPrice >= 0
+            if (data.priceType === 'FIXED') {
+                if (data.fixedPrice === undefined || data.fixedPrice < 0) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: t('validation.required', { field: t('services.price') }),
+                        path: ['fixedPrice'],
+                    });
+                }
+            }
+            // If TABLE, require prices >= 0
+            if (data.priceType === 'TABLE') {
+                if (!data.priceTiers || data.priceTiers.length === 0) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: t('validation.required', { field: t('services.priceTable') }),
+                        path: ['priceTiers'],
+                    });
+                } else {
+                    // Check each tier price >= 0
+                    data.priceTiers.forEach((tier, index) => {
+                        if (tier.price < 0) {
+                            ctx.addIssue({
+                                code: z.ZodIssueCode.custom,
+                                message: t('validation.min', { field: t('services.price'), min: 0 }),
+                                path: ['priceTiers', index, 'price'],
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }, [t]);
 
     const {
         register,
@@ -210,10 +221,9 @@ export default function ServiceForm({
 
     return (
         <form onSubmit={handleSubmit((data) => {
-            console.log('Form submitting:', data);
             onSubmit(data);
-        }, (errors) => {
-            console.log('Form validation errors:', errors);
+        }, () => {
+            // Form validation errors handled by UI
         })}>
             <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                 {/* Name */}
@@ -222,7 +232,7 @@ export default function ServiceForm({
                     <Input
                         id="name"
                         {...register('name')}
-                        placeholder="VD: Giữ xe, Internet, Vệ sinh..."
+                        placeholder={t('services.namePlaceholder', 'VD: Giữ xe, Internet, Vệ sinh...')}
                         className={errors.name ? 'border-destructive' : ''}
                     />
                     {errors.name && (
@@ -237,7 +247,7 @@ export default function ServiceForm({
                         <Input
                             id="unit"
                             {...register('unit')}
-                            placeholder="VD: người, xe, phòng..."
+                            placeholder={t('services.unitPlaceholder', 'VD: người, xe, phòng...')}
                             className={errors.unit ? 'border-destructive' : ''}
                         />
                     </div>

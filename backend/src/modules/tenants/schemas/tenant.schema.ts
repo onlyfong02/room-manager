@@ -12,6 +12,9 @@ export class Tenant {
     @Prop({ required: true, trim: true })
     fullName: string;
 
+    @Prop({ trim: true, index: true })
+    fullNameNormalized: string;
+
     @Prop({ required: true, unique: true, index: true })
     code: string;
 

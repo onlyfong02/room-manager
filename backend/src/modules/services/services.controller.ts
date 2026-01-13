@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ServicesService } from './services.service';
-import { CreateServiceDto, UpdateServiceDto } from './dto/service.dto';
+import { CreateServiceDto, UpdateServiceDto, GetServicesDto } from './dto/service.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -15,11 +15,8 @@ export class ServicesController {
     }
 
     @Get()
-    findAll(@CurrentUser() user: any, @Query('buildingId') buildingId?: string) {
-        if (buildingId) {
-            return this.servicesService.findByBuilding(buildingId, user.userId);
-        }
-        return this.servicesService.findAll(user.userId);
+    findAll(@CurrentUser() user: any, @Query() query: GetServicesDto) {
+        return this.servicesService.findAll(user.userId, query);
     }
 
     @Get(':id')

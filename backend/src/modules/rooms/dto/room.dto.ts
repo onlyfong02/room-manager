@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsString, IsOptional, IsNumber, IsEnum, IsArray, IsMongoId, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { RoomStatus, RoomType, ShortTermPricingType } from '@common/constants/enums';
+import { PaginationDto } from '@common/dto/pagination.dto';
 
 // DTO for short-term price tier
 export class ShortTermPriceTierDto {
@@ -15,6 +16,20 @@ export class ShortTermPriceTierDto {
     @IsNumber()
     @Min(0)
     price: number;
+}
+
+export class GetRoomsDto extends PaginationDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsMongoId()
+    buildingId?: string;
+
+    @IsOptional()
+    @IsEnum(RoomStatus)
+    status?: RoomStatus;
 }
 
 export class CreateRoomDto {

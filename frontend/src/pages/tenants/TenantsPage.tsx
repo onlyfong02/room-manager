@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Users, Search, Phone, Mail } from 'lucide-react';
@@ -28,6 +28,7 @@ import { toast } from '@/hooks/use-toast';
 import apiClient from '@/api/client';
 import Pagination from '@/components/Pagination';
 import TenantForm, { TenantFormData } from '@/components/forms/TenantForm';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Tenant {
     _id: string;
@@ -46,23 +47,14 @@ interface Tenant {
         phone?: string;
         relationship?: string;
     };
-    isActive: boolean;
+    status: 'RENTING' | 'ACTIVE' | 'CLOSED' | 'DEPOSITED';
     createdAt: string;
 }
 
 const tenantsApi = {
-    getAll: async (): Promise<Tenant[]> => {
-        const response = await apiClient.get('/tenants');
-        // API may return {data: [...], meta: {...} } or direct array
-        const rawData = Array.isArray(response.data?.data) ? response.data.data :
-            Array.isArray(response.data) ? response.data : [];
-
-        // Map backend fields to frontend interface
-        return rawData.map((t: any) => ({
-            ...t,
-            idNumber: t.idCard,
-            address: t.permanentAddress,
-        }));
+    getAll: async (params: { page: number; limit: number; search?: string }) => {
+        const response = await apiClient.get('/tenants', { params });
+        return response.data;
     },
     create: async (data: TenantFormData) => {
         // Map frontend fields to backend fields
@@ -75,6 +67,7 @@ const tenantsApi = {
             gender: data.gender || undefined,
             permanentAddress: data.address || undefined,
             occupation: data.occupation || undefined,
+            status: data.status || undefined,
             emergencyContact: data.emergencyContact || undefined,
         };
         const response = await apiClient.post('/tenants', backendData);
@@ -90,6 +83,7 @@ const tenantsApi = {
         if (data.dateOfBirth) backendData.dateOfBirth = data.dateOfBirth;
         if (data.gender) backendData.gender = data.gender;
         if (data.occupation) backendData.occupation = data.occupation;
+        if (data.status) backendData.status = data.status;
         if (data.emergencyContact) backendData.emergencyContact = data.emergencyContact;
         if (data.address) backendData.permanentAddress = data.address;
 
@@ -106,6 +100,7 @@ export default function TenantsPage() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -114,10 +109,17 @@ export default function TenantsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const { data: tenants = [], isLoading } = useQuery({
-        queryKey: ['tenants'],
-        queryFn: tenantsApi.getAll,
+    const { data: tenantsData, isLoading } = useQuery({
+        queryKey: ['tenants', { page: currentPage, limit: pageSize, search: debouncedSearchTerm }],
+        queryFn: () => tenantsApi.getAll({ page: currentPage, limit: pageSize, search: debouncedSearchTerm }),
     });
+
+    const tenants: Tenant[] = (Array.isArray(tenantsData?.data) ? tenantsData.data : []).map((t: any) => ({
+        ...t,
+        idNumber: t.idCard,
+        address: t.permanentAddress,
+    }));
+    const meta = tenantsData?.meta || { total: 0, totalPages: 0 };
 
     const createMutation = useMutation({
         mutationFn: tenantsApi.create,
@@ -172,20 +174,6 @@ export default function TenantsPage() {
         return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
     };
 
-    const filteredTenants = tenants.filter(
-        (tenant) =>
-            tenant.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tenant.phone.includes(searchTerm) ||
-            tenant.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Pagination
-    const totalPages = Math.ceil(filteredTenants.length / pageSize);
-    const paginatedTenants = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredTenants.slice(start, start + pageSize);
-    }, [filteredTenants, currentPage, pageSize]);
-
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
         setCurrentPage(1);
@@ -206,7 +194,12 @@ export default function TenantsPage() {
                             {t('tenants.add')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent
+                        className="max-w-md"
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                        onEscapeKeyDown={(e) => e.preventDefault()}
+                    >
+
                         <DialogHeader>
                             <DialogTitle>{t('tenants.addTitle')}</DialogTitle>
                             <DialogDescription>{t('tenants.addDescription')}</DialogDescription>
@@ -241,13 +234,13 @@ export default function TenantsPage() {
                         {t('tenants.list')}
                     </CardTitle>
                     <CardDescription>
-                        {t('tenants.totalCount', { count: filteredTenants.length })}
+                        {t('tenants.totalCount', { count: meta.total })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-                    ) : filteredTenants.length === 0 ? (
+                    ) : tenants.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">{t('tenants.noData')}</div>
                     ) : (
                         <Table>
@@ -263,7 +256,7 @@ export default function TenantsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedTenants.map((tenant) => (
+                                {tenants.map((tenant) => (
                                     <TableRow key={tenant._id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
@@ -292,8 +285,17 @@ export default function TenantsPage() {
                                         </TableCell>
                                         <TableCell>{tenant.idNumber}</TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant={tenant.isActive ? 'default' : 'secondary'}>
-                                                {tenant.isActive ? t('common.active') : t('common.inactive')}
+                                            <Badge
+                                                className={
+                                                    tenant.status === 'RENTING' ? 'bg-blue-500 hover:bg-blue-600' :
+                                                        tenant.status === 'ACTIVE' ? 'bg-green-500 hover:bg-green-600' :
+                                                            tenant.status === 'DEPOSITED' ? 'bg-orange-500 hover:bg-orange-600' :
+                                                                'bg-red-500 hover:bg-red-600'
+                                                }
+                                            >
+                                                {tenant.status === 'RENTING' ? t('tenants.statusRenting') :
+                                                    tenant.status === 'ACTIVE' ? t('tenants.statusActive') :
+                                                        tenant.status === 'DEPOSITED' ? t('tenants.statusDeposited') : t('tenants.statusClosed')}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
@@ -314,12 +316,12 @@ export default function TenantsPage() {
                             </TableBody>
                         </Table>
                     )}
-                    {filteredTenants.length > 0 && (
+                    {meta.total > 0 && (
                         <Pagination
                             currentPage={currentPage}
-                            totalPages={totalPages}
+                            totalPages={meta.totalPages}
                             pageSize={pageSize}
-                            totalItems={filteredTenants.length}
+                            totalItems={meta.total}
                             onPageChange={setCurrentPage}
                             onPageSizeChange={(size) => {
                                 setPageSize(size);
@@ -332,7 +334,12 @@ export default function TenantsPage() {
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-w-md">
+                <DialogContent
+                    className="max-w-md"
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('tenants.editTitle')}</DialogTitle>
                         <DialogDescription>{t('tenants.editDescription')}</DialogDescription>
@@ -350,6 +357,7 @@ export default function TenantsPage() {
                                 gender: selectedTenant.gender,
                                 address: selectedTenant.address,
                                 occupation: selectedTenant.occupation,
+                                status: selectedTenant.status,
                                 emergencyContact: selectedTenant.emergencyContact,
                             }}
                             onSubmit={(data) =>
@@ -364,7 +372,11 @@ export default function TenantsPage() {
 
             {/* Delete Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent>
+                <DialogContent
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+
                     <DialogHeader>
                         <DialogTitle>{t('tenants.deleteTitle')}</DialogTitle>
                         <DialogDescription>
@@ -385,6 +397,6 @@ export default function TenantsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 }

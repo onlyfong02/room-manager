@@ -36,6 +36,9 @@ export class Room {
     @Prop({ required: true, trim: true })
     roomName: string;
 
+    @Prop({ trim: true, index: true })
+    nameNormalized: string;
+
     @Prop({ default: 1 })
     floor: number;
 

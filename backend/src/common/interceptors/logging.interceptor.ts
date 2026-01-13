@@ -14,11 +14,10 @@ export class LoggingInterceptor implements NestInterceptor {
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const request = context.switchToHttp().getRequest();
-        const { method, url, body } = request;
-        const userAgent = request.get('user-agent') || '';
+        const { method, url } = request;
         const now = Date.now();
 
-        console.log(`[${method}] ${url} - Request Body:`, JSON.stringify(body));
+        console.log(`[${method}] ${url}`);
 
         return next.handle().pipe(
             tap({
@@ -30,11 +29,10 @@ export class LoggingInterceptor implements NestInterceptor {
                     );
                 },
                 error: (error) => {
-                    const errorResponse = error.response || {};
-                    console.log(
+                    // Detailed error logging is now handled by AllExceptionsFilter
+                    console.error(
                         `[${method}] ${url} - ERROR: ${error.message} - ${Date.now() - now}ms`,
                     );
-                    console.log(`Error Details:`, JSON.stringify(errorResponse, null, 2));
                 },
             }),
         );

@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength, IsNotEmpty, IsMongoId } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength, IsNotEmpty, IsMongoId, IsEnum } from 'class-validator';
+import { PaginationDto } from '@common/dto/pagination.dto';
 
 export class CreateRoomGroupDto {
     @IsMongoId()
@@ -23,6 +24,20 @@ export class CreateRoomGroupDto {
     @IsOptional()
     @IsNumber()
     sortOrder?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
+}
+
+export class GetRoomGroupsDto extends PaginationDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsMongoId()
+    buildingId?: string;
 
     @IsOptional()
     @IsBoolean()

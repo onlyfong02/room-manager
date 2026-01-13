@@ -276,20 +276,23 @@ export default function RoomForm({
                             name="status"
                             control={control}
                             render={({ field }) => {
-                                const isOccupied = currentStatus === 'OCCUPIED';
+                                const isLocked = currentStatus === 'OCCUPIED' || currentStatus === 'DEPOSITED';
                                 return (
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        disabled={isOccupied}
+                                        disabled={isLocked}
                                     >
-                                        <SelectTrigger className={isOccupied ? 'bg-muted' : ''}>
+                                        <SelectTrigger className={isLocked ? 'bg-muted' : ''}>
                                             <SelectValue placeholder={t('rooms.selectStatus')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="AVAILABLE">{t('rooms.statusAvailable')}</SelectItem>
-                                            {isOccupied && (
+                                            {currentStatus === 'OCCUPIED' && (
                                                 <SelectItem value="OCCUPIED">{t('rooms.statusOccupied')}</SelectItem>
+                                            )}
+                                            {currentStatus === 'DEPOSITED' && (
+                                                <SelectItem value="DEPOSITED">{t('rooms.statusDeposited')}</SelectItem>
                                             )}
                                             <SelectItem value="MAINTENANCE">{t('rooms.statusMaintenance')}</SelectItem>
                                         </SelectContent>

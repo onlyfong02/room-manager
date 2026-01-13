@@ -6,6 +6,7 @@ import { Room, RoomDocument } from '../rooms/schemas/room.schema';
 import { RoomGroup, RoomGroupDocument } from '../room-groups/schemas/room-group.schema';
 import { CreateBuildingDto, UpdateBuildingDto } from './dto/building.dto';
 import { BuildingQueryDto } from './dto/building-query.dto';
+import { normalizeString } from '@common/utils/string.util';
 
 @Injectable()
 export class BuildingsService {
@@ -39,6 +40,7 @@ export class BuildingsService {
 
         const building = new this.buildingModel({
             ...createBuildingDto,
+            nameNormalized: normalizeString(createBuildingDto.name),
             ownerId: new Types.ObjectId(ownerId),
             code
         });
@@ -47,7 +49,6 @@ export class BuildingsService {
 
     async findAll(ownerId: string, query: BuildingQueryDto) {
         const { page = 1, limit = 10, search } = query;
-        // Explicitly cast to numbers to ensure aggregation pipeline safety
         const pageNum = Number(page) || 1;
         const limitNum = Number(limit) || 10;
         const skip = (pageNum - 1) * limitNum;
@@ -58,14 +59,25 @@ export class BuildingsService {
         };
 
         if (search) {
-            const searchRegex = new RegExp(search, 'i');
-            filter.$or = [
-                { name: searchRegex },
-                { 'address.street': searchRegex },
-                { 'address.ward': searchRegex },
-                { 'address.district': searchRegex },
-                { 'address.city': searchRegex },
-            ];
+            const normalizedSearch = normalizeString(search);
+            // Search by code OR normalized name (covers fuzzy name search)
+            if (normalizedSearch) {
+                const searchRegex = new RegExp(normalizedSearch, 'i');
+                filter.$or = [
+                    { nameNormalized: searchRegex },
+                    { code: new RegExp(search, 'i') },
+                    { 'address.street': new RegExp(search, 'i') },
+                    { 'address.ward': new RegExp(search, 'i') },
+                    { 'address.district': new RegExp(search, 'i') },
+                    { 'address.city': new RegExp(search, 'i') },
+                ];
+            } else {
+                const searchRegex = new RegExp(search, 'i');
+                filter.$or = [
+                    { name: searchRegex },
+                    { code: searchRegex },
+                ];
+            }
         }
 
         const [data, total] = await Promise.all([
@@ -122,10 +134,16 @@ export class BuildingsService {
     }
 
     async update(id: string, ownerId: string, updateBuildingDto: UpdateBuildingDto): Promise<Building> {
+        const updateData: any = { ...updateBuildingDto };
+
+        if (updateData.name) {
+            updateData.nameNormalized = normalizeString(updateData.name);
+        }
+
         const building = await this.buildingModel
             .findOneAndUpdate(
                 { _id: id, ownerId: new Types.ObjectId(ownerId), isDeleted: false },
-                { $set: updateBuildingDto },
+                { $set: updateData },
                 { new: true },
             )
             .exec();
