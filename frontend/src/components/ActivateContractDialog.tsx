@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { Loader2 } from 'lucide-react';
 
 const activateSchema = z.object({
     startDate: z.string().min(1, 'Required'),
@@ -105,7 +106,8 @@ export const ActivateContractDialog: React.FC<ActivateContractDialogProps> = ({
                             <Button variant="outline" type="button" onClick={onClose} disabled={isSubmitting}>
                                 {t('common.cancel')}
                             </Button>
-                            <Button type="submit" loading={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t('contracts.activateConfirm')}
                             </Button>
                         </DialogFooter>

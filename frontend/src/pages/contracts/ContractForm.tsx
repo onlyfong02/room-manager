@@ -992,7 +992,6 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
                                                 control={form.control}
                                                 name="endDate"
                                                 render={({ field, fieldState }) => {
-                                                    const startDate = form.watch('startDate');
                                                     return (
                                                         <FormItem>
                                                             <FormLabel>{t('contracts.endDate')}</FormLabel>
