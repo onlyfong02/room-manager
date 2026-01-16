@@ -1,0 +1,27 @@
+{
+    "version": 2,
+    "regions": [
+        "sin1"
+    ],
+    "builds": [
+        {
+            "src": "src/vercel.ts",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "src/i18n/**"
+                ]
+            }
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "src/vercel.ts"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "src/vercel.ts"
+        }
+    ]
+}
