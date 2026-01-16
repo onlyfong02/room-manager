@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ContractsService } from './contracts.service';
-import { ContractsController } from './contracts.controller';
-import { Contract, ContractSchema } from './schemas/contract.schema';
+import { ContractsService } from '@modules/contracts/contracts.service';
+import { ContractsController } from '@modules/contracts/contracts.controller';
+import { Contract, ContractSchema } from '@modules/contracts/schemas/contract.schema';
 
-import { RoomsModule } from '../rooms/rooms.module';
-import { TenantsModule } from '../tenants/tenants.module';
-import { ServicesModule } from '../services/services.module';
+import { RoomsModule } from '@modules/rooms/rooms.module';
+import { TenantsModule } from '@modules/tenants/tenants.module';
+import { ServicesModule } from '@modules/services/services.module';
 
 @Module({
     imports: [

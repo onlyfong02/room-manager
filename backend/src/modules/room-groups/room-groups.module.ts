@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { RoomGroupsController } from './room-groups.controller';
-import { RoomGroupsService } from './room-groups.service';
-import { RoomGroup, RoomGroupSchema } from './schemas/room-group.schema';
+import { RoomGroupsController } from '@modules/room-groups/room-groups.controller';
+import { RoomGroupsService } from '@modules/room-groups/room-groups.service';
+import { RoomGroup, RoomGroupSchema } from '@modules/room-groups/schemas/room-group.schema';
 
 @Module({
     imports: [

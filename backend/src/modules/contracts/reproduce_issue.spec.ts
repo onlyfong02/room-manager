@@ -1,12 +1,12 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContractsService } from './contracts.service';
+import { ContractsService } from '@modules/contracts/contracts.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Contract } from './schemas/contract.schema';
-import { RoomsService } from '../rooms/rooms.service';
-import { TenantsService } from '../tenants/tenants.service';
-import { ServicesService } from '../services/services.service';
-import { CreateContractDto } from './dto/contract.dto';
+import { Contract } from '@modules/contracts/schemas/contract.schema';
+import { RoomsService } from '@modules/rooms/rooms.service';
+import { TenantsService } from '@modules/tenants/tenants.service';
+import { ServicesService } from '@modules/services/services.service';
+import { CreateContractDto } from '@modules/contracts/dto/contract.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { BadRequestException, NotFoundException } from '@nestjs/common';

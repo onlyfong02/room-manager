@@ -6,19 +6,19 @@ import { I18nModule, AcceptLanguageResolver, QueryResolver, HeaderResolver } fro
 import { APP_FILTER, APP_INTERCEPTOR, HttpAdapterHost } from '@nestjs/core';
 import * as winston from 'winston';
 import * as path from 'path';
-import { DatabaseConfig } from './config/database.config';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { BuildingsModule } from './modules/buildings/buildings.module';
-import { RoomsModule } from './modules/rooms/rooms.module';
-import { TenantsModule } from './modules/tenants/tenants.module';
-import { ContractsModule } from './modules/contracts/contracts.module';
-import { InvoicesModule } from './modules/invoices/invoices.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { RoomGroupsModule } from './modules/room-groups/room-groups.module';
-import { ServicesModule } from './modules/services/services.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { DatabaseConfig } from '@config/database.config';
+import { AuthModule } from '@modules/auth/auth.module';
+import { UsersModule } from '@modules/users/users.module';
+import { BuildingsModule } from '@modules/buildings/buildings.module';
+import { RoomsModule } from '@modules/rooms/rooms.module';
+import { TenantsModule } from '@modules/tenants/tenants.module';
+import { ContractsModule } from '@modules/contracts/contracts.module';
+import { InvoicesModule } from '@modules/invoices/invoices.module';
+import { PaymentsModule } from '@modules/payments/payments.module';
+import { RoomGroupsModule } from '@modules/room-groups/room-groups.module';
+import { ServicesModule } from '@modules/services/services.module';
+import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from '@common/interceptors/logging.interceptor';
 
 @Module({
     imports: [

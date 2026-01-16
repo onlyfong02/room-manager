@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { ContractType, ContractStatus, PaymentCycle, RoomType, ShortTermPricingType } from '../../../common/constants/enums';
-import { ShortTermPriceTierSchema, ShortTermPriceTier } from '../../rooms/schemas/room.schema';
+import { ContractType, ContractStatus, PaymentCycle, RoomType, ShortTermPricingType } from '@common/constants/enums';
+import { ShortTermPriceTierSchema, ShortTermPriceTier } from '@modules/rooms/schemas/room.schema';
 
 export type ContractDocument = Contract & Document;
 

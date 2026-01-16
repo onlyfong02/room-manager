@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Contract, ContractDocument } from './schemas/contract.schema';
-import { CreateContractDto, UpdateContractDto, GetContractsDto, ActivateContractDto } from './dto/contract.dto';
+import { Contract, ContractDocument } from '@modules/contracts/schemas/contract.schema';
+import { CreateContractDto, UpdateContractDto, GetContractsDto, ActivateContractDto } from '@modules/contracts/dto/contract.dto';
 
-import { RoomsService } from '../rooms/rooms.service';
-import { TenantsService } from '../tenants/tenants.service';
-import { ServicesService } from '../services/services.service';
-import { RoomStatus, RoomType, ShortTermPricingType, TenantStatus, ContractStatus, ContractType } from '../../common/constants/enums';
+import { RoomsService } from '@modules/rooms/rooms.service';
+import { TenantsService } from '@modules/tenants/tenants.service';
+import { ServicesService } from '@modules/services/services.service';
+import { RoomStatus, RoomType, ShortTermPricingType, TenantStatus, ContractStatus, ContractType } from '@common/constants/enums';
 
 @Injectable()
 export class ContractsService {

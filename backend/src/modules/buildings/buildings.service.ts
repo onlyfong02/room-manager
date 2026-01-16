@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Building, BuildingDocument } from './schemas/building.schema';
-import { Room, RoomDocument } from '../rooms/schemas/room.schema';
-import { RoomGroup, RoomGroupDocument } from '../room-groups/schemas/room-group.schema';
-import { CreateBuildingDto, UpdateBuildingDto } from './dto/building.dto';
-import { BuildingQueryDto } from './dto/building-query.dto';
-import { normalizeString } from '../../common/utils/string.util';
+import { Building, BuildingDocument } from '@modules/buildings/schemas/building.schema';
+import { Room, RoomDocument } from '@modules/rooms/schemas/room.schema';
+import { RoomGroup, RoomGroupDocument } from '@modules/room-groups/schemas/room-group.schema';
+import { CreateBuildingDto, UpdateBuildingDto } from '@modules/buildings/dto/building.dto';
+import { BuildingQueryDto } from '@modules/buildings/dto/building-query.dto';
+import { normalizeString } from '@common/utils/string.util';
 
 @Injectable()
 export class BuildingsService {

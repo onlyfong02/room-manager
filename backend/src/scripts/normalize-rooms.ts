@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
-import { RoomsService } from '../modules/rooms/rooms.service';
+import { RoomsService } from '@modules/rooms/rooms.service';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { normalizeString } from '../common/utils/string.util';
+import { normalizeString } from '@common/utils/string.util';
 
 async function bootstrap() {
     const app = await NestFactory.createApplicationContext(AppModule);

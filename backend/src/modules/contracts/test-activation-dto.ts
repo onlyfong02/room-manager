@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { ActivateContractDto } from './dto/contract.dto';
+import { ActivateContractDto } from '@modules/contracts/dto/contract.dto';
 
 async function testValidation(payload: any, label: string) {
     console.log(`\n--- Testing: ${label} ---`);

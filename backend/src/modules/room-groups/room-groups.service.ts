@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { RoomGroup, RoomGroupDocument } from './schemas/room-group.schema';
-import { CreateRoomGroupDto, UpdateRoomGroupDto, GetRoomGroupsDto } from './dto/room-group.dto';
-import { normalizeString } from '../../common/utils/string.util';
+import { RoomGroup, RoomGroupDocument } from '@modules/room-groups/schemas/room-group.schema';
+import { CreateRoomGroupDto, UpdateRoomGroupDto, GetRoomGroupsDto } from '@modules/room-groups/dto/room-group.dto';
+import { normalizeString } from '@common/utils/string.util';
 
 @Injectable()
 export class RoomGroupsService {

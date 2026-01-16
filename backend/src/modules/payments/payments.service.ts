@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Payment, PaymentDocument } from './schemas/payment.schema';
-import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
+import { Payment, PaymentDocument } from '@modules/payments/schemas/payment.schema';
+import { CreatePaymentDto, UpdatePaymentDto } from '@modules/payments/dto/payment.dto';
 
 @Injectable()
 export class PaymentsService {

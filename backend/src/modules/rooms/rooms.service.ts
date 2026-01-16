@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Room, RoomDocument } from './schemas/room.schema';
-import { Building, BuildingDocument } from '../buildings/schemas/building.schema';
-import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from './dto/room.dto';
-import { normalizeString } from '../../common/utils/string.util';
+import { Room, RoomDocument } from '@modules/rooms/schemas/room.schema';
+import { Building, BuildingDocument } from '@modules/buildings/schemas/building.schema';
+import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from '@modules/rooms/dto/room.dto';
+import { normalizeString } from '@common/utils/string.util';
 
 @Injectable()
 export class RoomsService {

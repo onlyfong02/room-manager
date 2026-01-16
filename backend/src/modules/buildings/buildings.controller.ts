@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
-import { BuildingsService } from './buildings.service';
-import { CreateBuildingDto, UpdateBuildingDto } from './dto/building.dto';
-import { BuildingQueryDto } from './dto/building-query.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BuildingsService } from '@modules/buildings/buildings.service';
+import { CreateBuildingDto, UpdateBuildingDto } from '@modules/buildings/dto/building.dto';
+import { BuildingQueryDto } from '@modules/buildings/dto/building-query.dto';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 @Controller('buildings')
 @UseGuards(JwtAuthGuard)
