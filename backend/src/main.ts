@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { I18nValidationPipe } from 'nestjs-i18n';
+import helmet from 'helmet';
 import express from 'express';
 
 const server = express();
@@ -32,6 +33,12 @@ async function bootstrap() {
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         allowedHeaders: 'Content-Type,Accept,Authorization,x-lang',
     });
+
+    // Security headers with Helmet
+    app.use(helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+        contentSecurityPolicy: false, // Disable CSP to avoid conflicts with frontend
+    }));
 
     app.setGlobalPrefix(configService.get('API_PREFIX') || 'api');
 

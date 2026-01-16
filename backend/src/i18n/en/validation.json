@@ -20,5 +20,6 @@
     "EMAIL": "{property} must be a valid email address",
     "STRING": "{property} must be a string",
     "MIN_LENGTH": "{property} must be at least {constraints.0} characters",
-    "PASSWORDS_NOT_MATCH": "Passwords do not match"
+    "PASSWORDS_NOT_MATCH": "Passwords do not match",
+    "PASSWORD_COMPLEXITY": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
 }

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, Validate, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, Matches, Validate, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 import { i18nValidationMessage } from 'nestjs-i18n';
 
 @ValidatorConstraint({ name: 'MatchPassword', async: false })
@@ -29,8 +29,11 @@ export class RegisterDto {
     @IsNotEmpty({
         message: i18nValidationMessage('validation.NOT_EMPTY'),
     })
-    @MinLength(6, {
+    @MinLength(8, {
         message: i18nValidationMessage('validation.MIN_LENGTH'),
+    })
+    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+        message: i18nValidationMessage('validation.PASSWORD_COMPLEXITY'),
     })
     password: string;
 

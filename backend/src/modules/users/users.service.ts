@@ -113,9 +113,10 @@ export class UsersService {
     }
 
     async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+        const hashedToken = refreshToken ? await bcrypt.hash(refreshToken, 10) : null;
         await this.userModel.updateOne(
             { _id: userId },
-            { $set: { refreshToken } },
+            { $set: { refreshToken: hashedToken } },
         ).exec();
     }
 }

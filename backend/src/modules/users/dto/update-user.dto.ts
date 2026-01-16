@@ -1,4 +1,5 @@
-import { IsString, IsOptional, MinLength, IsBoolean, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, MinLength, Matches, IsBoolean, IsNotEmpty } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class UpdateUserDto {
     @IsString()
@@ -21,6 +22,11 @@ export class ChangePasswordDto {
 
     @IsString()
     @IsNotEmpty()
-    @MinLength(6)
+    @MinLength(8, {
+        message: i18nValidationMessage('validation.MIN_LENGTH'),
+    })
+    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+        message: i18nValidationMessage('validation.PASSWORD_COMPLEXITY'),
+    })
     newPassword: string;
 }

@@ -20,5 +20,6 @@
     "EMAIL": "{property} phải là địa chỉ email hợp lệ",
     "STRING": "{property} phải là chuỗi ký tự",
     "MIN_LENGTH": "{property} phải có ít nhất {constraints.0} ký tự",
-    "PASSWORDS_NOT_MATCH": "Mật khẩu nhập lại không khớp"
+    "PASSWORDS_NOT_MATCH": "Mật khẩu nhập lại không khớp",
+    "PASSWORD_COMPLEXITY": "Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường và một số"
 }
