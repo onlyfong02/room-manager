@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { RoomsService } from '@modules/rooms/rooms.service';
-import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from '@modules/rooms/dto/room.dto';
+import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto, DashboardRoomsDto } from '@modules/rooms/dto/room.dto';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -12,6 +12,11 @@ export class RoomsController {
     @Post()
     create(@CurrentUser() user: any, @Body() createRoomDto: CreateRoomDto) {
         return this.roomsService.create(user.userId, createRoomDto);
+    }
+
+    @Get('dashboard')
+    getDashboard(@CurrentUser() user: any, @Query() query: DashboardRoomsDto) {
+        return this.roomsService.getDashboard(user.userId, query);
     }
 
     @Get()

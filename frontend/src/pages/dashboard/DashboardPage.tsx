@@ -1,9 +1,44 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, DoorOpen, Users, Receipt } from 'lucide-react';
+import apiClient from '@/api/client';
+import RoomStatusOverview from '@/components/dashboard/RoomStatusOverview';
+import ContractForm from '@/pages/contracts/ContractForm';
+import ContractViewModal from '@/components/ContractViewModal';
+
+// Fetch contract by ID for viewing
+const fetchContract = async (contractId: string) => {
+    const response = await apiClient.get(`/contracts/${contractId}`);
+    return response.data;
+};
 
 export default function DashboardPage() {
     const { t } = useTranslation();
+
+    // Contract modal states
+    const [isContractFormOpen, setIsContractFormOpen] = useState(false);
+    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+    const [isContractViewOpen, setIsContractViewOpen] = useState(false);
+    const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+
+    // Fetch contract data when viewing
+    const { data: selectedContract } = useQuery({
+        queryKey: ['contract', selectedContractId],
+        queryFn: () => fetchContract(selectedContractId!),
+        enabled: !!selectedContractId && isContractViewOpen,
+    });
+
+    const handleCreateContract = (roomId: string) => {
+        setSelectedRoomId(roomId);
+        setIsContractFormOpen(true);
+    };
+
+    const handleViewContract = (contractId: string) => {
+        setSelectedContractId(contractId);
+        setIsContractViewOpen(true);
+    };
 
     const stats = [
         {
@@ -66,18 +101,31 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Welcome Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('dashboard.welcome')}</CardTitle>
-                    <CardDescription>{t('dashboard.welcomeDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                        {t('dashboard.getStarted')}
-                    </p>
-                </CardContent>
-            </Card>
+            {/* Room Status Overview */}
+            <RoomStatusOverview
+                onCreateContract={handleCreateContract}
+                onViewContract={handleViewContract}
+            />
+
+            {/* Contract Form Modal */}
+            <ContractForm
+                open={isContractFormOpen}
+                onOpenChange={(open) => {
+                    setIsContractFormOpen(open);
+                    if (!open) setSelectedRoomId(null);
+                }}
+                preSelectedRoomId={selectedRoomId || undefined}
+            />
+
+            {/* Contract View Modal */}
+            <ContractViewModal
+                contract={selectedContract}
+                open={isContractViewOpen}
+                onOpenChange={(open) => {
+                    setIsContractViewOpen(open);
+                    if (!open) setSelectedContractId(null);
+                }}
+            />
         </div>
     );
 }

@@ -35,9 +35,10 @@ interface ContractFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     contract?: any; // If editing
+    preSelectedRoomId?: string; // For creating contract from dashboard with pre-selected room
 }
 
-export default function ContractForm({ open, onOpenChange, contract }: ContractFormProps) {
+export default function ContractForm({ open, onOpenChange, contract, preSelectedRoomId }: ContractFormProps) {
     const { t } = useTranslation();
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -81,11 +82,55 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
 
     // Sync with global building state if changed
     useEffect(() => {
-        if (selectedBuildingId && !form.getValues('roomId') && !contract) {
+        if (selectedBuildingId && !form.getValues('roomId') && !contract && !preSelectedRoomId) {
             setSelectedBuilding(selectedBuildingId);
             form.setValue('buildingId', selectedBuildingId, { shouldValidate: true });
         }
-    }, [selectedBuildingId, contract]);
+    }, [selectedBuildingId, contract, preSelectedRoomId]);
+
+    // Fetch pre-selected room data
+    const { data: preSelectedRoom } = useQuery({
+        queryKey: ['room', preSelectedRoomId],
+        queryFn: async () => {
+            const response = await apiClient.get(`/rooms/${preSelectedRoomId}`);
+            return response.data;
+        },
+        enabled: !!preSelectedRoomId && open && !contract,
+    });
+
+    // Auto-select building and room when preSelectedRoomId is provided
+    useEffect(() => {
+        if (preSelectedRoom && open && !contract) {
+            const room = preSelectedRoom;
+            const buildingId = room.buildingId?._id || room.buildingId;
+            if (buildingId) {
+                setSelectedBuilding(buildingId);
+                form.setValue('buildingId', buildingId, { shouldValidate: true });
+            }
+            // Use handleRoomChange logic inline to set all room values
+            form.setValue('roomType', room.roomType);
+            form.setValue('rentPrice', room.defaultRoomPrice || 0);
+            form.setValue('electricityPrice', room.defaultElectricPrice || 0);
+            form.setValue('waterPrice', room.defaultWaterPrice || 0);
+            if (room.roomType === 'LONG_TERM' && room.defaultTermMonths) {
+                const termMonths = room.defaultTermMonths;
+                form.setValue('paymentCycleMonths', termMonths);
+                if (termMonths === 1) form.setValue('paymentCycle', 'MONTHLY');
+                else if (termMonths === 2) form.setValue('paymentCycle', 'MONTHLY_2');
+                else if (termMonths === 3) form.setValue('paymentCycle', 'QUARTERLY');
+                else if (termMonths === 6) form.setValue('paymentCycle', 'MONTHLY_6');
+                else if (termMonths === 12) form.setValue('paymentCycle', 'MONTHLY_12');
+                else form.setValue('paymentCycle', 'CUSTOM');
+            }
+            if (room.roomType === 'SHORT_TERM') {
+                form.setValue('shortTermPricingType', room.shortTermPricingType);
+                form.setValue('hourlyPricingMode', room.hourlyPricingMode);
+                form.setValue('pricePerHour', room.pricePerHour || 0);
+                form.setValue('fixedPrice', room.fixedPrice || 0);
+            }
+            form.setValue('roomId', room._id, { shouldValidate: true });
+        }
+    }, [preSelectedRoom, open, contract, form]);
 
     // Handle contract editing
     useEffect(() => {
@@ -118,7 +163,7 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
             });
             setSelectedBuilding(contract.roomId?.buildingId?._id || contract.buildingId || '');
             setActiveTab('existing');
-        } else if (!contract && open) {
+        } else if (!contract && open && !preSelectedRoomId) {
             form.reset({
                 roomType: 'LONG_TERM',
                 paymentCycle: 'MONTHLY',
@@ -138,7 +183,7 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
                 buildingId: selectedBuildingId || ''
             });
         }
-    }, [contract, open, form]);
+    }, [contract, open, form, preSelectedRoomId]);
 
     const { fields: serviceFields, append: appendService, remove: removeService } = useFieldArray({
         control: form.control,
@@ -505,7 +550,7 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
                                                                         form.setValue('roomId', '', { shouldValidate: true });
                                                                     }}
                                                                     showAllOption={false}
-                                                                    disabled={!!selectedBuildingId || !!contract}
+                                                                    disabled={!!selectedBuildingId || !!contract || !!preSelectedRoomId}
                                                                     error={!!fieldState.error}
                                                                 />
                                                             </FormControl>
@@ -530,7 +575,7 @@ export default function ContractForm({ open, onOpenChange, contract }: ContractF
                                                                         handleRoomChange(room);
                                                                     }}
                                                                     error={!!fieldState.error}
-                                                                    disabled={!!contract}
+                                                                    disabled={!!contract || !!preSelectedRoomId}
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />

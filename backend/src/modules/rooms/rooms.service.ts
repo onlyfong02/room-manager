@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Room, RoomDocument } from '@modules/rooms/schemas/room.schema';
 import { Building, BuildingDocument } from '@modules/buildings/schemas/building.schema';
-import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto } from '@modules/rooms/dto/room.dto';
+import { CreateRoomDto, UpdateRoomDto, UpdateIndexesDto, GetRoomsDto, DashboardRoomsDto } from '@modules/rooms/dto/room.dto';
 import { normalizeString, escapeRegExp } from '@common/utils/string.util';
 
 @Injectable()
@@ -206,5 +206,150 @@ export class RoomsService {
             { _id: new Types.ObjectId(id), ownerId: new Types.ObjectId(ownerId), isDeleted: false },
             { $set: { status } }
         ).exec();
+    }
+
+    async getDashboard(ownerId: string, query: DashboardRoomsDto): Promise<any> {
+        const filter: any = { ownerId: new Types.ObjectId(ownerId), isDeleted: false };
+
+        if (query.buildingId) {
+            filter.buildingId = new Types.ObjectId(query.buildingId);
+        }
+
+        if (query.status) {
+            filter.status = query.status;
+        }
+
+        if (query.roomGroupIds) {
+            // Support comma-separated room group IDs for multi-select
+            const groupIds = query.roomGroupIds.split(',').filter(id => id.trim());
+            if (groupIds.length > 0) {
+                filter.roomGroupId = { $in: groupIds.map(id => new Types.ObjectId(id.trim())) };
+            }
+        }
+
+        if (query.search) {
+            const escapedSearch = escapeRegExp(query.search);
+            const normalizedSearch = normalizeString(query.search);
+            const escapedNormalizedSearch = escapeRegExp(normalizedSearch);
+            if (escapedNormalizedSearch) {
+                const searchRegex = new RegExp(escapedNormalizedSearch, 'i');
+                const rawSearchRegex = new RegExp(escapedSearch, 'i');
+                filter.$or = [
+                    { nameNormalized: searchRegex },
+                    { roomCode: rawSearchRegex },
+                    { roomName: rawSearchRegex }
+                ];
+            } else {
+                const searchRegex = new RegExp(escapedSearch, 'i');
+                filter.$or = [
+                    { roomName: searchRegex },
+                    { roomCode: searchRegex }
+                ];
+            }
+        }
+
+        // Fetch rooms with populated room groups
+        const rooms = await this.roomModel.aggregate([
+            { $match: filter },
+            {
+                $lookup: {
+                    from: 'roomgroups',
+                    localField: 'roomGroupId',
+                    foreignField: '_id',
+                    as: 'roomGroup'
+                }
+            },
+            { $unwind: { path: '$roomGroup', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'contracts',
+                    let: { roomId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$roomId', '$$roomId'] },
+                                        { $eq: ['$status', 'ACTIVE'] },
+                                        { $eq: ['$isDeleted', false] }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: 'tenants',
+                                localField: 'tenantId',
+                                foreignField: '_id',
+                                as: 'tenant'
+                            }
+                        },
+                        { $unwind: { path: '$tenant', preserveNullAndEmptyArrays: true } },
+                        { $limit: 1 }
+                    ],
+                    as: 'activeContractArr'
+                }
+            },
+            { $unwind: { path: '$activeContractArr', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    roomCode: 1,
+                    roomName: 1,
+                    floor: 1,
+                    status: 1,
+                    roomType: 1,
+                    defaultRoomPrice: 1,
+                    roomGroupId: {
+                        _id: '$roomGroup._id',
+                        name: '$roomGroup.name',
+                        color: '$roomGroup.color'
+                    },
+                    activeContract: {
+                        _id: '$activeContractArr._id',
+                        contractCode: '$activeContractArr.contractCode',
+                        endDate: '$activeContractArr.endDate',
+                        tenantId: {
+                            _id: '$activeContractArr.tenant._id',
+                            fullName: '$activeContractArr.tenant.fullName',
+                            phone: '$activeContractArr.tenant.phone'
+                        }
+                    }
+                }
+            },
+            { $sort: { 'roomGroup.sortOrder': 1, roomName: 1 } }
+        ]).exec();
+
+        // Group rooms by roomGroupId
+        const groupMap = new Map<string, any>();
+        const ungrouped: any[] = [];
+
+        for (const room of rooms) {
+            // Clean up empty activeContract
+            if (!room.activeContract?._id) {
+                room.activeContract = undefined;
+            }
+            // Clean up empty roomGroupId
+            if (!room.roomGroupId?._id) {
+                room.roomGroupId = undefined;
+                ungrouped.push(room);
+            } else {
+                const groupId = room.roomGroupId._id.toString();
+                if (!groupMap.has(groupId)) {
+                    groupMap.set(groupId, {
+                        _id: room.roomGroupId._id,
+                        name: room.roomGroupId.name,
+                        color: room.roomGroupId.color,
+                        rooms: []
+                    });
+                }
+                groupMap.get(groupId).rooms.push(room);
+            }
+        }
+
+        return {
+            groups: Array.from(groupMap.values()),
+            ungrouped
+        };
     }
 }

@@ -329,7 +329,7 @@ export class ContractsService {
             _id: new Types.ObjectId(id),
             ownerId: new Types.ObjectId(ownerId),
             isDeleted: false
-        }).exec();
+        }).populate('roomId').exec();
         if (!existingContract) throw new NotFoundException('Contract not found');
 
         // Only DRAFT contracts can be edited
@@ -343,9 +343,14 @@ export class ContractsService {
         const resolvedRoomType = updateContractDto.roomType || existingContract.roomType || (existingContract.contractType as unknown as RoomType);
 
         this.logger.log(`Constructing validation DTO for contract update: ${id}`);
+        const roomIdStr = (existingContract.roomId as any)._id?.toString() || existingContract.roomId.toString();
+        const buildingId = (updateContractDto as any).buildingId || (existingContract.roomId as any).buildingId?.toString() || '';
+
         const validationDto: CreateContractDto = {
-            roomId: existingContract.roomId.toString(),
+            roomId: roomIdStr,
             tenantId: existingContract.tenantId.toString(),
+            buildingId: buildingId,
+            contractType: updateContractDto.contractType || existingContract.contractType,
             roomType: resolvedRoomType,
             startDate: updateContractDto.startDate ? new Date(updateContractDto.startDate as any) : existingContract.startDate,
             endDate: (updateContractDto.endDate as any === null || updateContractDto.endDate as any === '')
@@ -361,11 +366,11 @@ export class ContractsService {
             initialElectricIndex: updateContractDto.initialElectricIndex ?? existingContract.initialElectricIndex,
             initialWaterIndex: updateContractDto.initialWaterIndex ?? existingContract.initialWaterIndex,
             serviceCharges: updateContractDto.serviceCharges ?? existingContract.serviceCharges,
+            shortTermPrices: updateContractDto.shortTermPrices ?? existingContract.shortTermPrices,
             shortTermPricingType: updateContractDto.shortTermPricingType || existingContract.shortTermPricingType,
             hourlyPricingMode: updateContractDto.hourlyPricingMode || existingContract.hourlyPricingMode,
             pricePerHour: updateContractDto.pricePerHour ?? existingContract.pricePerHour,
             fixedPrice: updateContractDto.fixedPrice ?? existingContract.fixedPrice,
-            shortTermPrices: updateContractDto.shortTermPrices ?? existingContract.shortTermPrices,
         };
         this.logger.log(`Validation DTO: ${JSON.stringify(validationDto)}`);
         await this.validateCreateContract(ownerId, validationDto, true); // isUpdate = true to skip tenant status check

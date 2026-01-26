@@ -32,6 +32,24 @@ export class GetRoomsDto extends PaginationDto {
     status?: RoomStatus;
 }
 
+export class DashboardRoomsDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsMongoId()
+    buildingId?: string;
+
+    @IsOptional()
+    @IsEnum(RoomStatus)
+    status?: RoomStatus;
+
+    @IsOptional()
+    @IsString()
+    roomGroupIds?: string; // Comma-separated room group IDs for multi-select
+}
+
 export class CreateRoomDto {
     @IsMongoId()
     @IsNotEmpty()
