@@ -1,15 +1,15 @@
+import apiClient from '@/api/client';
+import { ActivateContractDialog } from '@/components/ActivateContractDialog';
+import ContractViewModal from '@/components/ContractViewModal';
+import RoomStatusOverview from '@/components/dashboard/RoomStatusOverview';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from '@/hooks/use-toast';
+import ContractForm from '@/pages/contracts/ContractForm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Building2, DoorOpen, Receipt, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, DoorOpen, Users, Receipt } from 'lucide-react';
-import apiClient from '@/api/client';
-import RoomStatusOverview from '@/components/dashboard/RoomStatusOverview';
-import ContractForm from '@/pages/contracts/ContractForm';
-import ContractViewModal from '@/components/ContractViewModal';
-import { ActivateContractDialog } from '@/components/ActivateContractDialog';
-import { toast } from '@/hooks/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Fetch contract by ID for viewing
 const fetchContract = async (contractId: string) => {
@@ -112,6 +112,10 @@ export default function DashboardPage() {
         },
     ];
 
+
+
+// ... (existing imports)
+
     return (
         <div className="space-y-8">
             {/* Page Header */}
@@ -120,31 +124,42 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat) => (
-                    <Card key={stat.title}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                            <div className={`rounded-full p-2 ${stat.bgColor}`}>
-                                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stat.value}</div>
-                            <p className="text-xs text-muted-foreground">{stat.description}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            <Tabs defaultValue="dashboard" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="dashboard">{t('dashboard.title')}</TabsTrigger>
+                    <TabsTrigger value="board">{t('dashboard.roomOverview')}</TabsTrigger>
+                </TabsList>
 
-            {/* Room Status Overview */}
-            <RoomStatusOverview
-                onCreateContract={handleCreateContract}
-                onViewContract={handleViewContract}
-                onEditContract={handleEditContract}
-                onActivateContract={handleActivateContract}
-            />
+                <TabsContent value="dashboard" className="space-y-4">
+                    {/* Stats Grid */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {stats.map((stat) => (
+                            <Card key={stat.title}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                                    <div className={`rounded-full p-2 ${stat.bgColor}`}>
+                                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{stat.value}</div>
+                                    <p className="text-xs text-muted-foreground">{stat.description}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="board" className="space-y-4">
+                    {/* Room Status Overview */}
+                    <RoomStatusOverview
+                        onCreateContract={handleCreateContract}
+                        onViewContract={handleViewContract}
+                        onEditContract={handleEditContract}
+                        onActivateContract={handleActivateContract}
+                    />
+                </TabsContent>
+            </Tabs>
 
             {/* Contract Form Modal */}
             <ContractForm

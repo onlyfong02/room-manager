@@ -210,7 +210,6 @@ export default function ContractsPage() {
                 <div className="flex flex-col gap-1 text-sm items-end">
                     <div className="font-medium whitespace-nowrap">
                         {formatCurrency(contract.rentPrice)}
-                        <span className="text-muted-foreground text-xs font-normal"> / {contract.paymentCycleMonths || 1} {t('rooms.month')}</span>
                     </div>
                     {(contract.electricityPrice !== undefined || contract.waterPrice !== undefined) && (
                         <div className="flex gap-2 text-xs text-muted-foreground">
@@ -277,7 +276,7 @@ export default function ContractsPage() {
             case 'MONTHLY_12':
                 return t('contracts.cycleYearly');
             case 'CUSTOM':
-                return `${contract.paymentCycleMonths} ${t('rooms.month')}`;
+                return `${contract.paymentCycleMonths} ${t('rooms.months')}`;
             default:
                 return contract.paymentCycle;
         }

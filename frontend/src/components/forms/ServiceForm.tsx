@@ -36,8 +36,6 @@ interface Building {
     code: string;
 }
 
-const COMMON_UNITS = ['người', 'cái', 'phòng', 'xe', 'tháng', 'lần'];
-
 export default function ServiceForm({
     defaultValues,
     onSubmit,
@@ -45,6 +43,15 @@ export default function ServiceForm({
     isSubmitting = false,
 }: ServiceFormProps) {
     const { t } = useTranslation();
+
+    const COMMON_UNITS = [
+        t('common.person'),
+        t('common.item'),
+        t('common.room'),
+        t('common.vehicle'),
+        t('common.month'),
+        t('common.time')
+    ];
 
     const serviceSchema = useMemo(() => {
         const priceTierSchema = z.object({

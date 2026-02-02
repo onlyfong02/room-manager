@@ -1,9 +1,11 @@
 {
-    "updated_at": "2026-01-30T01:50:00+07:00",
+    "updated_at": "2026-02-01T19:05:00+07:00",
     "working_on": {
         "feature": "Room Status & Contract Polish",
         "task": "Enhance Long Term card logic, validate status",
-        "status": "completed",
+        "status": "running",
+        "last_run": "2026-02-01T19:05:00+07:00",
+        "last_run_url": "http://localhost:5173",
         "files": [
             "frontend/src/components/dashboard/RoomCard.tsx",
             "backend/src/modules/rooms/rooms.service.ts",

@@ -1,20 +1,17 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, DoorOpen, Search, Zap, Droplets, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, DoorOpen, Droplets, Pencil, Plus, Search, Trash2, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import apiClient from '@/api/client';
+import { ColumnVisibilityToggle } from '@/components/ColumnVisibilityToggle';
+import RoomForm, { RoomFormData } from '@/components/forms/RoomForm';
+import Pagination from '@/components/Pagination';
+import { PriceTablePopover } from '@/components/PriceTablePopover';
 import { Badge } from '@/components/ui/badge';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -24,16 +21,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
-import apiClient from '@/api/client';
-import Pagination from '@/components/Pagination';
+import { ColumnConfig, useColumnVisibility } from '@/hooks/useColumnVisibility';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useBuildingStore } from '@/stores/buildingStore';
 import { formatCellValue } from '@/utils/tableUtils';
-import RoomForm, { RoomFormData } from '@/components/forms/RoomForm';
-import { PriceTablePopover } from '@/components/PriceTablePopover';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useColumnVisibility, ColumnConfig } from '@/hooks/useColumnVisibility';
-import { ColumnVisibilityToggle } from '@/components/ColumnVisibilityToggle';
 
 interface ShortTermPriceTier {
     fromValue: number;

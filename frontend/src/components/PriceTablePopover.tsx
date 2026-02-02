@@ -81,7 +81,7 @@ export function PriceTablePopover({ shortTermPrices, pricingType, unitLabel, max
                                     >
                                         <span className="text-muted-foreground">
                                             {tier.toValue === -1
-                                                ? `${tier.fromValue}${unit}+ (${t('rooms.remaining', 'còn lại')})`
+                                                ? `${tier.fromValue} ${unit}+ (${t('rooms.remaining', 'còn lại')})`
                                                 : `${tier.fromValue} - ${tier.toValue} ${unit}`
                                             }
                                         </span>

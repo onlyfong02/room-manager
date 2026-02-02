@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ChevronDown } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import RoomCard from './RoomCard';
 
 interface Room {
@@ -74,8 +74,40 @@ export default function RoomGroupCollapse({
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const [currPage, setCurrPage] = useState(0);
 
-    // Carousel Logic
-    const itemsPerPage = 8;
+    // Dynamic Items Per Page Logic (Max 2 rows)
+    const [itemsPerPage, setItemsPerPage] = useState(8); // Default for large screens
+
+    useEffect(() => {
+        const calculateItemsPerPage = () => {
+            const width = window.innerWidth;
+            if (width >= 1600) {
+                return 8; // 4 cols * 2 rows
+            } else if (width >= 1300) {
+                return 6; // 3 cols * 2 rows
+            } else if (width >= 640) {
+                return 4; // 2 cols * 2 rows
+            } else {
+                return 2; // 1 col * 2 rows
+            }
+        };
+
+        const handleResize = () => {
+            const newItemsPerPage = calculateItemsPerPage();
+            setItemsPerPage(prev => {
+                if (prev !== newItemsPerPage) {
+                    setCurrPage(0); // Reset page on layout change
+                    return newItemsPerPage;
+                }
+                return prev;
+            });
+        };
+
+        // Initial calculation
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const totalPages = Math.ceil(rooms.length / itemsPerPage);
     const pages = Array.from({ length: totalPages }, (_, i) =>
         rooms.slice(i * itemsPerPage, (i + 1) * itemsPerPage)
@@ -131,11 +163,6 @@ export default function RoomGroupCollapse({
                         </Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                        {statusCounts.AVAILABLE > 0 && (
-                            <Badge className="bg-green-500 text-white text-xs">
-                                {statusCounts.AVAILABLE} {t('dashboard.vacant')}
-                            </Badge>
-                        )}
                         {statusCounts.OCCUPIED > 0 && (
                             <Badge className="bg-blue-500 text-white text-xs">
                                 {statusCounts.OCCUPIED} {t('dashboard.occupied')}
@@ -146,6 +173,11 @@ export default function RoomGroupCollapse({
                                 {statusCounts.DEPOSITED} {t('dashboard.deposited')}
                             </Badge>
                         )}
+                        {statusCounts.AVAILABLE > 0 && (
+                            <Badge className="bg-green-500 text-white text-xs">
+                                {statusCounts.AVAILABLE} {t('dashboard.vacant')}
+                            </Badge>
+                        )}
                         {statusCounts.MAINTENANCE > 0 && (
                             <Badge className="bg-yellow-500 text-white text-xs">
                                 {statusCounts.MAINTENANCE} {t('dashboard.maintenance')}
@@ -154,7 +186,7 @@ export default function RoomGroupCollapse({
                     </div>
                 </div>
             </CollapsibleTrigger>
-            <CollapsibleContent className="relative group/carousel">
+            <CollapsibleContent className="relative group/carousel overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                 {/* Navigation Buttons - Show only on hover if preferred, or always */}
                 {showNav && (
                     <>
@@ -162,7 +194,7 @@ export default function RoomGroupCollapse({
                             onClick={prev}
                             disabled={currPage === 0}
                             className={cn(
-                                "absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-background/80 shadow-md rounded-full border hover:bg-background transition-opacity disabled:opacity-0 sm:-ml-4",
+                                "absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-background shadow-md rounded-full border hover:bg-accent transition-opacity disabled:opacity-0",
                                 !isOpen && "hidden"
                             )}
                             type="button"
@@ -173,7 +205,7 @@ export default function RoomGroupCollapse({
                             onClick={next}
                             disabled={currPage === totalPages - 1}
                             className={cn(
-                                "absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-background/80 shadow-md rounded-full border hover:bg-background transition-opacity disabled:opacity-0 sm:-mr-4",
+                                "absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-background shadow-md rounded-full border hover:bg-accent transition-opacity disabled:opacity-0",
                                 !isOpen && "hidden"
                             )}
                             type="button"
@@ -189,7 +221,7 @@ export default function RoomGroupCollapse({
                         style={{ transform: `translateX(-${currPage * 100}%)` }}
                     >
                         {pages.map((pageRooms, pageIdx) => (
-                            <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 pl-8 content-start">
+                            <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 min-[1300px]:grid-cols-3 min-[1600px]:grid-cols-4 gap-4 p-4 pl-8 content-start">
                                 {pageRooms.map((room) => (
                                     <RoomCard
                                         key={room._id}

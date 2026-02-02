@@ -1,16 +1,21 @@
-import { useTranslation } from 'react-i18next';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Calendar, MoreHorizontal, FileText, Wrench, Plus, Zap, Droplets, Wallet, Package, Loader2, Edit } from 'lucide-react';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn, formatCurrency } from '@/lib/utils';
-import { format, differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { Calendar, Droplets, Edit, FileText, Loader2, MoreHorizontal, Package, Plus, User, Wallet, Wrench, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PriceTablePopover } from '@/components/PriceTablePopover';
 
@@ -71,12 +76,7 @@ const statusColors = {
     DEPOSITED: 'border-l-orange-500',
 };
 
-const statusBadgeColors = {
-    AVAILABLE: 'bg-green-500 text-white hover:bg-green-600',
-    OCCUPIED: 'bg-blue-500 text-white hover:bg-blue-600',
-    MAINTENANCE: 'bg-yellow-500 text-white hover:bg-yellow-600',
-    DEPOSITED: 'bg-orange-500 text-white hover:bg-orange-600',
-};
+
 
 export default function RoomCard({
     room,
@@ -104,13 +104,15 @@ export default function RoomCard({
             let termDisplay = '';
             if (term === 12) {
                 termDisplay = `/ 1 ${t('common.year')}`;
+            } else if (term > 1) {
+                termDisplay = `/ ${term} ${t('rooms.months')}`;
             } else {
-                termDisplay = `/ ${term} ${t('common.month')}`;
+                termDisplay = `/ ${term} ${t('rooms.month')}`;
             }
             return (
-                <p className="text-3xl font-black text-primary">
+                <p className="text-lg font-bold text-primary leading-none">
                     {room.defaultRoomPrice ? formatCurrency(room.defaultRoomPrice) : '--'}
-                    <span className="text-sm font-normal text-muted-foreground ml-1">{termDisplay}</span>
+                    <span className="text-[10px] font-normal text-muted-foreground ml-1">{termDisplay}</span>
                 </p>
             );
         }
@@ -118,9 +120,9 @@ export default function RoomCard({
         // Short Term
         if (room.shortTermPricingType === 'FIXED') {
             return (
-                <p className="text-3xl font-black text-primary">
+                <p className="text-lg font-bold text-primary leading-none">
                     {room.fixedPrice ? formatCurrency(room.fixedPrice) : '--'}
-                    <span className="text-sm font-normal text-muted-foreground ml-1">/{t('common.trip')}</span>
+                    <span className="text-[10px] font-normal text-muted-foreground ml-1">/{t('common.trip')}</span>
                 </p>
             );
         }
@@ -128,9 +130,9 @@ export default function RoomCard({
         if (room.shortTermPricingType === 'HOURLY') {
             if (room.hourlyPricingMode === 'PER_HOUR') {
                 return (
-                    <p className="text-3xl font-black text-primary">
+                    <p className="text-lg font-bold text-primary leading-none">
                         {room.pricePerHour ? formatCurrency(room.pricePerHour) : '--'}
-                        <span className="text-sm font-normal text-muted-foreground ml-1">/{t('common.hour')}</span>
+                        <span className="text-[10px] font-normal text-muted-foreground ml-1">/{t('common.hour')}</span>
                     </p>
                 );
             }
@@ -160,7 +162,7 @@ export default function RoomCard({
     const renderOccupiedContent = (contract: NonNullable<RoomCardProps['room']['activeContract']>) => {
         // Determine price and unit based on contract type
         let price = contract.rentPrice || 0;
-        let unit = t('common.month');
+        let unit = t('rooms.month');
         let label = t('contracts.rentPrice');
 
         if (contract.contractType === 'SHORT_TERM' || room.roomType === 'SHORT_TERM') {
@@ -189,9 +191,9 @@ export default function RoomCard({
             if (term === 12) {
                 unit = `1 ${t('common.year')}`;
             } else if (term > 1) {
-                unit = `${term} ${t('common.month')}`;
+                unit = `${term} ${t('rooms.months')}`;
             } else {
-                unit = t('common.month');
+                unit = t('rooms.month');
             }
         }
 
@@ -200,30 +202,30 @@ export default function RoomCard({
             !(contract.shortTermPricingType === 'DAILY');
 
         return (
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {/* Tenant Header */}
-                <div className="flex items-center gap-2.5 p-1">
-                    <div className="bg-primary/10 p-2 rounded-full shrink-0">
-                        <User className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-1.5 p-0">
+                    <div className="bg-primary/10 p-1 rounded-full shrink-0">
+                        <User className="h-3 w-3 text-primary" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="flex justify-between items-start">
-                            <p className="font-bold text-base truncate leading-tight">{contract.tenantId?.fullName || t('tenants.guest')}</p>
-                            {/* Deposit Info (Compact) - For ALL types */}
+                    <div className="min-w-0 flex-1 leading-none">
+                        <div className="flex justify-between items-center mb-0.5">
+                            <p className="font-bold text-xs truncate">{contract.tenantId?.fullName || t('tenants.guest')}</p>
+                            {/* Deposit Info (Compact) */}
                             {contract.depositAmount && contract.depositAmount > 0 && (
-                                <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0 bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
-                                    <Wallet className="h-3 w-3 opacity-70" />
-                                    {t('contracts.depositShort')}: {formatCurrency(contract.depositAmount)}
+                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5 shrink-0 bg-muted/50 px-1 py-0 rounded border border-border/50">
+                                    <Wallet className="h-2 w-2 opacity-70" />
+                                    {formatCurrency(contract.depositAmount)}
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-muted-foreground">{contract.tenantId?.phone || contract.contractCode}</p>
+                        <p className="text-[9px] text-muted-foreground">{contract.tenantId?.phone || contract.contractCode}</p>
                     </div>
                 </div>
 
                 {/* Financial Ledger Section */}
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                    <div className="space-y-2.5">
+                <div className="bg-muted/30 rounded-lg p-2 border border-border/50">
+                    <div className="space-y-1.5">
                         {/* Main Price Row */}
                         <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -246,22 +248,22 @@ export default function RoomCard({
                         {/* Utilities Detail (Only show if prices exist and > 0, typical for Long Term) */}
                         {(contract.electricityPrice !== undefined && contract.electricityPrice > 0 || contract.waterPrice !== undefined && contract.waterPrice > 0) && (
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-muted/40 dark:bg-white/10 rounded p-2 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center h-full">
-                                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/80 mb-1 flex items-center gap-1.5">
-                                        <Zap className="h-3 w-3 text-yellow-500" /> {t('services.electricity')}
+                                <div className="bg-muted/40 dark:bg-white/10 rounded p-1.5 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center">
+                                    <p className="text-[9px] uppercase font-semibold text-muted-foreground/80 mb-0.5 flex items-center gap-1">
+                                        <Zap className="h-2.5 w-2.5 text-yellow-500" /> {t('services.electricity')}
                                     </p>
-                                    <span className="text-sm font-bold text-primary">
+                                    <span className="text-xs font-bold text-primary">
                                         {formatCurrency(contract.electricityPrice || 0)}
-                                        <span className="text-[10px] opacity-60 ml-0.5 font-normal">/số</span>
+                                        <span className="text-[9px] opacity-60 ml-0.5 font-normal">/{t('contracts.unitIndex').toLowerCase()}</span>
                                     </span>
                                 </div>
-                                <div className="bg-muted/40 dark:bg-white/10 rounded p-2 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center h-full">
-                                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/80 mb-1 flex items-center gap-1.5">
-                                        <Droplets className="h-3 w-3 text-blue-500" /> {t('services.water')}
+                                <div className="bg-muted/40 dark:bg-white/10 rounded p-1.5 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center">
+                                    <p className="text-[9px] uppercase font-semibold text-muted-foreground/80 mb-0.5 flex items-center gap-1">
+                                        <Droplets className="h-2.5 w-2.5 text-blue-500" /> {t('services.water')}
                                     </p>
-                                    <span className="text-sm font-bold text-primary">
+                                    <span className="text-xs font-bold text-primary">
                                         {formatCurrency(contract.waterPrice || 0)}
-                                        <span className="text-[10px] opacity-60 ml-0.5 font-normal">/số</span>
+                                        <span className="text-[9px] opacity-60 ml-0.5 font-normal">/{t('contracts.unitIndex').toLowerCase()}</span>
                                     </span>
                                 </div>
                             </div>
@@ -269,11 +271,17 @@ export default function RoomCard({
 
                         {/* Services Only (if any) */}
                         {contract.serviceCharges && contract.serviceCharges.length > 0 && (
-                            <div className="pt-1.5 border-t border-border/40 space-y-2">
-                                <div className="space-y-1 mt-2">
-                                    <div className="flex items-center gap-1.5 mb-1.5 opacity-70">
-                                        <Package className="h-3 w-3" />
-                                        <p className="text-[10px] uppercase font-bold tracking-wider">{t('contracts.services')}</p>
+                            <div className="pt-1 border-t border-border/40 space-y-1">
+                                <div className="space-y-1 mt-1">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <div className="flex items-center gap-1.5 opacity-70">
+                                            <Package className="h-3 w-3" />
+                                            <p className="text-[10px] uppercase font-bold tracking-wider">{t('contracts.services')}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-primary">
+                                            <span className="text-muted-foreground font-medium mr-1">{t('common.totalShort')}:</span>
+                                            {formatCurrency(contract.serviceCharges.reduce((sum, s) => sum + (s.amount * (s.quantity || 1)), 0))}
+                                        </span>
                                     </div>
                                     <div className="grid grid-cols-1 gap-1.5">
                                         {contract.serviceCharges.slice(0, 3).map((s, i) => (
@@ -286,9 +294,38 @@ export default function RoomCard({
                                             </div>
                                         ))}
                                         {contract.serviceCharges.length > 3 && (
-                                            <p className="text-[9px] text-center opacity-60 font-medium py-0.5">
-                                                +{contract.serviceCharges.length - 3} {t('common.more')}
-                                            </p>
+                                            <div className="flex justify-center pt-0.5">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <div className="cursor-pointer inline-flex" role="button" tabIndex={0}>
+                                                            <Badge variant="secondary" className="text-[9px] h-4 px-2 py-0 bg-muted/50 text-muted-foreground border border-border/30 font-medium hover:bg-muted">
+                                                                +{contract.serviceCharges.length - 3} {t('common.more')}
+                                                            </Badge>
+                                                        </div>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-64 p-3" align="center">
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between border-b pb-1.5 mb-1">
+                                                                <p className="font-semibold text-sm">{t('contracts.services')}</p>
+                                                                <span className="text-xs font-bold text-primary">
+                                                                    {formatCurrency(contract.serviceCharges.reduce((sum, s) => sum + (s.amount * (s.quantity || 1)), 0))}
+                                                                </span>
+                                                            </div>
+                                                            <div className="grid gap-2 max-h-[200px] overflow-y-auto pr-1">
+                                                                {contract.serviceCharges.map((s, i) => (
+                                                                    <div key={i} className="flex justify-between items-center text-xs">
+                                                                        <span className="truncate mr-2 text-muted-foreground">
+                                                                            {s.name}
+                                                                            {(s.quantity || 1) > 1 && <span className="text-[10px] ml-1 bg-primary/10 px-1 rounded text-primary">x{s.quantity}</span>}
+                                                                        </span>
+                                                                        <span className="font-bold shrink-0">{formatCurrency(s.amount * (s.quantity || 1))}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -317,7 +354,11 @@ export default function RoomCard({
                             const today = new Date();
                             const diffDays = differenceInCalendarDays(start, today);
 
-                            if (diffDays < 0) {
+                            if (diffDays === 0) {
+                                // Today
+                                dateValue = t('common.today'); 
+                                dateColorClass = "bg-orange-100 text-orange-700 border-orange-200 font-bold";
+                            } else if (diffDays < 0) {
                                 // Overdue
                                 additionalInfo = (
                                     <span className="text-[10px] font-bold text-red-500 ml-2 flex items-center gap-1">
@@ -425,15 +466,16 @@ export default function RoomCard({
                     }
 
                     return (
-                        <div className={`flex items-center justify-between text-[11px] font-medium px-2.5 py-2 rounded-md border ${dateColorClass}`}>
+
+                        <div className={`flex items-center justify-between text-[10px] font-medium px-2 py-1 rounded-md border ${dateColorClass}`}>
                             <div className="flex items-center">
-                                <span className="flex items-center gap-1.5 opacity-80">
-                                    <Calendar className="h-3.5 w-3.5" />
+                                <span className="flex items-center gap-1 opacity-80">
+                                    <Calendar className="h-3 w-3" />
                                     {dateLabel}
                                 </span>
                                 {additionalInfo}
                             </div>
-                            <span className="font-bold">{dateValue}</span>
+                            <span className="font-bold ml-2">{dateValue}</span>
                         </div>
                     );
                 })()}
@@ -443,7 +485,7 @@ export default function RoomCard({
 
     const renderEmptyState = () => {
         return (
-            <div className="flex-1 flex flex-col justify-center items-center py-4 space-y-4">
+            <div className="flex-1 flex flex-col justify-center items-center py-2 space-y-2">
                 <div className="text-center space-y-1">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('rooms.listingWait')}</p>
                     {renderPrice()}
@@ -451,30 +493,28 @@ export default function RoomCard({
 
                 </div>
 
-                <Badge className={cn("w-full justify-center py-1.5 text-sm font-bold shadow-sm", statusBadgeColors[room.status])}>
-                    {t(`rooms.status.${room.status}`)}
-                </Badge>
+
 
                 {/* Display Default Utilities for Long Term */}
                 {room.roomType === 'LONG_TERM' && (
                     <div className="w-full pt-2">
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-muted/40 dark:bg-white/10 rounded p-2 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center h-full">
-                                <p className="text-[10px] uppercase font-semibold text-muted-foreground/80 mb-1 flex items-center gap-1.5">
-                                    <Zap className="h-3 w-3 text-yellow-500" /> {t('services.electricity')}
+                            <div className="bg-muted/40 dark:bg-white/10 rounded p-1.5 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center">
+                                <p className="text-[9px] uppercase font-semibold text-muted-foreground/80 mb-0.5 flex items-center gap-1">
+                                    <Zap className="h-2.5 w-2.5 text-yellow-500" /> {t('services.electricity')}
                                 </p>
-                                <span className="text-sm font-bold text-primary">
+                                <span className="text-xs font-bold text-primary">
                                     {room.defaultElectricPrice ? formatCurrency(room.defaultElectricPrice) : '--'}
-                                    <span className="text-[10px] opacity-60 ml-0.5 font-normal">/số</span>
+                                    <span className="text-[9px] opacity-60 ml-0.5 font-normal">/{t('contracts.unitIndex').toLowerCase()}</span>
                                 </span>
                             </div>
-                            <div className="bg-muted/40 dark:bg-white/10 rounded p-2 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center h-full">
-                                <p className="text-[10px] uppercase font-semibold text-muted-foreground/80 mb-1 flex items-center gap-1.5">
-                                    <Droplets className="h-3 w-3 text-blue-500" /> {t('services.water')}
+                            <div className="bg-muted/40 dark:bg-white/10 rounded p-1.5 border border-border/50 dark:border-white/10 shadow-sm flex flex-col justify-center">
+                                <p className="text-[9px] uppercase font-semibold text-muted-foreground/80 mb-0.5 flex items-center gap-1">
+                                    <Droplets className="h-2.5 w-2.5 text-blue-500" /> {t('services.water')}
                                 </p>
-                                <span className="text-sm font-bold text-primary">
+                                <span className="text-xs font-bold text-primary">
                                     {room.defaultWaterPrice ? formatCurrency(room.defaultWaterPrice) : '--'}
-                                    <span className="text-[10px] opacity-60 ml-0.5 font-normal">/số</span>
+                                    <span className="text-[9px] opacity-60 ml-0.5 font-normal">/{t('contracts.unitIndex').toLowerCase()}</span>
                                 </span>
                             </div>
                         </div>
@@ -486,16 +526,16 @@ export default function RoomCard({
 
     return (
         <Card className={cn(
-            "overflow-hidden border-l-4 transition-all hover:shadow-lg h-full flex flex-col group dark:bg-[#292F3D]",
+            "overflow-hidden border-l-8 transition-all hover:shadow-lg h-full flex flex-col group dark:bg-[#292F3D] bg-gray-100/50 border-gray-200/60",
             statusColors[room.status],
-            room.status === 'DEPOSITED' && "bg-orange-50/10"
+            room.status === 'DEPOSITED' && "bg-orange-50/30"
         )}>
-            <CardContent className="p-4 flex-1 flex flex-col">
+            <CardContent className="p-2 flex-1 flex flex-col">
                 {/* Global Card Top: Room Basics */}
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-1">
                     <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <h3 className="font-black text-2xl leading-none truncate tracking-tight">{room.roomName}</h3>
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                            <h3 className="font-black text-base leading-none truncate tracking-tight">{room.roomName}</h3>
                             <div className="flex gap-1">
                                 <Badge
                                     variant="secondary"
@@ -513,19 +553,49 @@ export default function RoomCard({
                                         {t('rooms.status.DEPOSITED')}
                                     </Badge>
                                 )}
+                                {room.status === 'AVAILABLE' && (
+                                    <Badge className="text-[10px] h-5 px-2 font-bold shrink-0 bg-green-500 hover:bg-green-600 text-white border-0">
+                                        {t('rooms.status.AVAILABLE')}
+                                    </Badge>
+                                )}
+                                {room.status === 'MAINTENANCE' && (
+                                    <Badge className="text-[10px] h-5 px-2 font-bold shrink-0 bg-yellow-500 hover:bg-yellow-600 text-white border-0">
+                                        {t('rooms.status.MAINTENANCE')}
+                                    </Badge>
+                                )}
+                                {room.status === 'OCCUPIED' && (
+                                    <Badge className="text-[10px] h-5 px-2 font-bold shrink-0 bg-blue-500 hover:bg-blue-600 text-white border-0">
+                                        {t('rooms.status.OCCUPIED')}
+                                    </Badge>
+                                )}
+                                {(() => {
+                                    if (room.status === 'DEPOSITED' && room.activeContract?.startDate) {
+                                        const start = new Date(room.activeContract.startDate);
+                                        const today = new Date();
+                                        const diffDays = differenceInCalendarDays(start, today);
+                                        if (diffDays < 0) {
+                                            return (
+                                                <Badge className="text-[10px] h-5 px-2 font-bold shrink-0 bg-red-500 hover:bg-red-600 text-white border-0 animate-pulse">
+                                                    {t('contracts.overdue')}
+                                                </Badge>
+                                            );
+                                        }
+                                    }
+                                    return null;
+                                })()}
                             </div>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/80 flex-wrap">
-                            <span className="font-mono bg-muted/60 px-1.5 py-0.5 rounded text-xs text-foreground/70">{room.roomCode}</span>
-                            <span className="bg-primary/5 px-1.5 py-0.5 rounded italic whitespace-nowrap">{t('rooms.floor_display', { floor: room.floor })}</span>
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/80 flex-wrap">
+                            <span className="font-mono bg-muted/60 px-1 py-0.5 rounded text-foreground/70">{room.roomCode}</span>
+                            <span className="bg-primary/5 px-1 py-0.5 rounded italic whitespace-nowrap">{t('rooms.floor_display', { floor: room.floor })}</span>
                             {room.area ? (
-                                <span className="bg-primary/5 px-1.5 py-0.5 rounded italic whitespace-nowrap">
+                                <span className="bg-primary/5 px-1 py-0.5 rounded italic whitespace-nowrap">
                                     {room.area} m²
                                 </span>
                             ) : null}
                             {room.maxOccupancy ? (
-                                <span className="bg-primary/5 px-1.5 py-0.5 rounded italic whitespace-nowrap flex items-center gap-1">
-                                    <User className="h-3 w-3" /> {room.maxOccupancy}
+                                <span className="bg-primary/5 px-1 py-0.5 rounded italic whitespace-nowrap flex items-center gap-0.5">
+                                    <User className="h-2.5 w-2.5" /> {room.maxOccupancy}
                                 </span>
                             ) : null}
                         </div>
@@ -533,8 +603,8 @@ export default function RoomCard({
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

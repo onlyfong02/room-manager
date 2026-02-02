@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, Check, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import apiClient from '@/api/client';
+import RoomForm, { RoomFormData } from '@/components/forms/RoomForm';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBuildingStore } from '@/stores/buildingStore';
-import apiClient from '@/api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Filter, Search, X } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import RoomGroupCollapse from './RoomGroupCollapse';
-import { Skeleton } from '@/components/ui/skeleton';
-import RoomForm, { RoomFormData } from '@/components/forms/RoomForm';
 
 interface Room {
     _id: string;
@@ -68,7 +68,7 @@ interface RoomStatusOverviewProps {
     onActivateContract?: (contract: { _id: string; startDate: string; endDate?: string }) => void;
 }
 
-type StatusFilter = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+type StatusFilter = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'DEPOSITED';
 
 const roomsApi = {
     getDashboard: async (params: {
@@ -232,6 +232,7 @@ export default function RoomStatusOverview({
     const statusTabs: { key: StatusFilter; label: string }[] = [
         { key: 'ALL', label: t('dashboard.allRooms') },
         { key: 'OCCUPIED', label: t('dashboard.occupied') },
+        { key: 'DEPOSITED', label: t('dashboard.deposited') },
         { key: 'AVAILABLE', label: t('dashboard.vacant') },
         { key: 'MAINTENANCE', label: t('dashboard.maintenance') },
     ];
